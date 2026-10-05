@@ -630,22 +630,27 @@
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, onValue, set, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAHXocwDHnG-U04R37_1sxmVuZi5nDtxV4",
-    authDomain: "ott-service-abcc4.firebaseapp.com",
-    databaseURL: "https://ott-service-abcc4-default-rtdb.firebaseio.com",
-    projectId: "ott-service-abcc4",
-    storageBucket: "ott-service-abcc4.firebasestorage.app",
-    messagingSenderId: "320511435378",
-    appId: "1:320511435378:web:d99f89dea5324c658618eb",
-    measurementId: "G-SF2M0TX2WT"
-  };
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBDukLCBXgd0PD4ZXsm_YQSiahi8BZmolk",
+  authDomain: "baeseon-a5fc5.firebaseapp.com",
+  projectId: "baeseon-a5fc5",
+  storageBucket: "baeseon-a5fc5.firebasestorage.app",
+  messagingSenderId: "365982742172",
+  appId: "1:365982742172:web:4eb583dc33865d69669f59",
+  measurementId: "G-TT027SVQQF"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
   const ADMIN_KEY = "1234";
 
