@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>세인영 OTT 공유 현황</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -862,7 +865,7 @@
         var base = a.start + '_' + k + '_';
         if (logsData[base + 'end_button'] || logsData[base + 'expired']) return;
         writeLog('vanished', k, a, { detectedAt: now(), scheduledEnd: a.end });
-      }, 5000);
+      }, 8000);
     });
   }
 
@@ -1086,18 +1089,18 @@
   function endUsage(p) {
     var u = state[p];
     if (!u) { closeSheet(); return; }
-    runTransaction(ref(db, 'ott_state/' + p), function (cur) {
-      if (cur && cur.start === u.start) return null;
-      return undefined;
-    }).then(function (res) {
-      if (res.committed) {
-        var t = now();
-        writeLog('end_button', p, u, {
-          at: t,
-          scheduledEnd: u.end,
-          remainingMin: Math.max(0, Math.round((u.end - t) / 60000))
-        });
-      }
+    var t = now();
+    // 로그를 먼저 저장한 뒤 삭제해서, 삭제가 보이는 시점에는 종료 기록이 이미 존재하도록 함
+    writeLog('end_button', p, u, {
+      at: t,
+      scheduledEnd: u.end,
+      remainingMin: Math.max(0, Math.round((u.end - t) / 60000))
+    }).then(function () {
+      return runTransaction(ref(db, 'ott_state/' + p), function (cur) {
+        if (cur && cur.start === u.start) return null;
+        return undefined;
+      });
+    }).then(function () {
       closeSheet();
     }).catch(function (err) {
       alert('종료 중 오류가 발생했습니다: ' + err.message);
@@ -1437,7 +1440,7 @@
       case 'expired':
         return formatDateTime(l.end) + ' 사용 시간이 끝나 자동 종료' + (l.detectedAt ? ' (처리 ' + formatDateTime(l.detectedAt) + ')' : '');
       case 'vanished':
-        return formatDateTime(l.at) + ' 감지 · 종료 버튼/만료 기록 없이 사라짐 (예정 종료 ' + formatDateTime(l.scheduledEnd || l.end) + ')';
+        return formatDateTime(l.at) + ' 감지 · 종료 버튼/만료 기록 없이 사라짐 (예정 종료 ' + formatDateTime(l.scheduledEnd || l.end) + ') · 이전 버전 화면에서 종료했을 가능성 있음';
       default:
         return '';
     }
