@@ -857,11 +857,11 @@
     var data = buildLog(type, p, u, extra);
     return set(ref(db, 'usage_logs/' + id), data).then(function () {
       var v = document.getElementById('verInfo');
-      if (v) { v.textContent = 'v2 · 로그 기능 켜짐'; v.className = 'ver-info'; }
+      if (v) { v.textContent = 'ver 1.0.1'; v.className = 'ver-info'; }
     }).catch(function (err) {
       console.error('로그 저장 실패:', err);
       var v = document.getElementById('verInfo');
-      if (v) { v.textContent = 'v2 · 로그 저장 오류: ' + (err && err.code ? err.code : err.message); v.className = 'ver-info err'; }
+      if (v) { v.textContent = 'ver 1.0.1' + (err && err.code ? err.code : err.message); v.className = 'ver-info err'; }
     });
   }
 
