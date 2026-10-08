@@ -713,7 +713,7 @@
   <footer>
     Made for <span>세인영</span> by <span>배성진</span>
     <button type="button" class="log-link" id="openLogBtn">사용 로그</button>
-    <div class="ver-info" id="verInfo">ver 1.0.1</div>
+    <div class="ver-info" id="verInfo"></div>
   </footer>
 </main>
 
@@ -722,15 +722,6 @@
 </div>
 
 <script type="module">
-  /* =========================================================
-     [설정 영역] 앞으로 버전 및 인증키 변경 시 여기서 수정하세요.
-     ========================================================= */
-  const APP_CONFIG = {
-    version: "ver 1.0.1",
-    adminKey: "1234",
-    logPin: "1357"
-  };
-
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, onValue, set, push, remove, runTransaction, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -748,14 +739,17 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  const ADMIN_KEY = APP_CONFIG.adminKey;
-  const LOG_PIN = APP_CONFIG.logPin;
+  /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
+  const CONFIG = {
+    VERSION: 'ver 1.0.1',   // 하단에 표시되는 버전
+    ADMIN_KEY: '1234',      // 불편사항 조회 비밀키
+    LOG_PIN: '1357'         // 사용 로그 핀코드
+  };
+  /* ================================================ */
 
-  /* 초기 버전 텍스트 설정 */
-  const verInfoEl = document.getElementById('verInfo');
-  if (verInfoEl) {
-    verInfoEl.textContent = APP_CONFIG.version;
-  }
+  const ADMIN_KEY = CONFIG.ADMIN_KEY;
+  const LOG_PIN = CONFIG.LOG_PIN;
+  document.getElementById('verInfo').textContent = CONFIG.VERSION;
 
   /* 서버 시간 보정: 기기 시계가 틀려도 다른 사람의 사용 정보를 잘못 만료시키지 않도록 함 */
   let serverOffset = 0;
@@ -850,7 +844,9 @@
     return sid;
   }
 
-  /* ===== 사용 로그 ===== */
+  /* ===== 사용 로그 =====
+     usage_logs/{시작시각}_{프로필}_{종류} 형태의 고정 키로 저장하므로
+     여러 기기가 동시에 같은 이벤트를 기록해도 중복되지 않음 */
   function buildLog(type, p, u, extra) {
     return Object.assign({
       type: type,
@@ -870,14 +866,16 @@
     var data = buildLog(type, p, u, extra);
     return set(ref(db, 'usage_logs/' + id), data).then(function () {
       var v = document.getElementById('verInfo');
-      if (v) { v.textContent = APP_CONFIG.version; v.className = 'ver-info'; }
+      if (v) { v.textContent = CONFIG.VERSION; v.className = 'ver-info'; }
     }).catch(function (err) {
       console.error('로그 저장 실패:', err);
       var v = document.getElementById('verInfo');
-      if (v) { v.textContent = APP_CONFIG.version + ' · 저장 오류: ' + (err && err.code ? err.code : err.message); v.className = 'ver-info err'; }
+      if (v) { v.textContent = CONFIG.VERSION + ' · 로그 저장 오류: ' + (err && err.code ? err.code : err.message); v.className = 'ver-info err'; }
     });
   }
 
+  /* 등록 기록 보정: 현재 사용 중인데 '등록' 로그가 없으면(이전 버전 화면에서 등록한 경우 등)
+     새 버전 화면이 8초 뒤 대신 기록함. 이미 기록이 있으면 덮어쓰지 않음 */
   var logsLoaded = false;
   var backfilling = {};
   function backfillStarts() {
@@ -903,6 +901,7 @@
     });
   }
 
+  /* 사용 현황이 갑자기 사라졌을 때(종료 버튼/만료 기록이 없는 경우) 감지해서 기록 */
   function watchVanished(prev, next) {
     Object.keys(prev).forEach(function (k) {
       var a = prev[k];
@@ -951,6 +950,7 @@
     return null;
   }
 
+  // 만료된 세션을 트랜잭션으로 안전하게 삭제하고, 실제로 삭제한 기기가 '만료' 로그를 남김
   var purging = {};
   function purge() {
     Object.keys(state).forEach(function (k) {
@@ -1142,6 +1142,7 @@
     var u = state[p];
     if (!u) { closeSheet(); return; }
     var t = now();
+    // 로그를 먼저 저장한 뒤 삭제해서, 삭제가 보이는 시점에는 종료 기록이 이미 존재하도록 함
     writeLog('end_button', p, u, {
       at: t,
       scheduledEnd: u.end,
@@ -1272,6 +1273,7 @@
           deviceId: currentDeviceId
         };
 
+        // 트랜잭션: 동시에 같은 프로필을 등록해도 먼저 등록한 사람의 기록을 덮어쓰지 않음
         runTransaction(ref(db, 'ott_state/' + p), function (cur) {
           if (cur && cur.end > now()) return undefined;
           return newData;
@@ -1528,3 +1530,52 @@
     var list = el('div');
     list.id = 'logList';
     sheet.appendChild(list);
+
+    var acts = el('div', 'actions');
+    var close = el('button', 'btn', '닫기');
+    close.addEventListener('click', closeSheet);
+    acts.appendChild(close);
+    sheet.appendChild(acts);
+
+    renderLogList();
+  }
+
+  function renderLogList() {
+    var list = document.getElementById('logList');
+    if (!list) return;
+    list.textContent = '';
+
+    var f = LOG_FILTERS.find(function (x) { return x.id === logFilter; }) || LOG_FILTERS[0];
+    var rows = Object.keys(logsData).map(function (k) { return logsData[k]; })
+      .filter(function (l) { return l && f.match(l.type); })
+      .sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+
+    if (rows.length === 0) {
+      list.appendChild(el('p', 'log-empty', '기록이 없습니다.'));
+      return;
+    }
+
+    rows.forEach(function (l) {
+      var box = el('div', 'log-item');
+      var top = el('div', 'log-top');
+      top.appendChild(el('span', 'log-type t-' + l.type, LOG_TYPES[l.type] || l.type));
+      top.appendChild(el('span', 'log-who', l.profile + ' (' + (l.ott || '') + ')'));
+      top.appendChild(el('span', 'log-who', '· ' + (l.user || '-')));
+      top.appendChild(el('span', 'log-time', formatDateTime(l.at)));
+      box.appendChild(top);
+      box.appendChild(el('div', 'log-detail', logDetail(l)));
+      list.appendChild(box);
+    });
+  }
+
+  document.getElementById('overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeSheet();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
+
+  renderTabs();
+  setInterval(tick, 1000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) purge(); });
+</script>
+</body>
+</html>
