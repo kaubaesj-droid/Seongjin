@@ -751,6 +751,17 @@
   const LOG_PIN = CONFIG.LOG_PIN;
   document.getElementById('verInfo').textContent = CONFIG.VERSION;
 
+  /* 저장소(localStorage)가 막힌 브라우저에서도 동작하도록 안전하게 감싸기 */
+  const memStore = {};
+  function sget(k) { try { var v = localStorage.getItem(k); return v === null ? (memStore[k] || null) : v; } catch (e) { return memStore[k] || null; } }
+  function sset(k, v) { memStore[k] = v; try { localStorage.setItem(k, v); } catch (e) {} }
+
+  /* 예상치 못한 오류가 나면 하단 버전 옆에 표시 (원인 확인용) */
+  window.addEventListener('error', function (e) {
+    var v = document.getElementById('verInfo');
+    if (v) { v.textContent = CONFIG.VERSION + ' · 오류: ' + e.message; v.className = 'ver-info err'; }
+  });
+
   /* 서버 시간 보정: 기기 시계가 틀려도 다른 사람의 사용 정보를 잘못 만료시키지 않도록 함 */
   let serverOffset = 0;
   function now() { return Date.now() + serverOffset; }
@@ -765,14 +776,14 @@
   const themeLabel = document.getElementById('themeLabel');
 
   function getPreferredTheme() {
-    const saved = localStorage.getItem(THEME_KEY);
+    const saved = sget(THEME_KEY);
     if (saved) return saved;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
 
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem(THEME_KEY, theme);
+    sset(THEME_KEY, theme);
     themeLabel.textContent = theme === 'dark' ? '주간 모드' : '야간 모드';
   }
 
@@ -836,10 +847,10 @@
   let hours = null;
 
   function getDeviceSessionId() {
-    let sid = localStorage.getItem(SESSION_KEY);
+    let sid = sget(SESSION_KEY);
     if (!sid) {
       sid = 'dev_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
-      localStorage.setItem(SESSION_KEY, sid);
+      sset(SESSION_KEY, sid);
     }
     return sid;
   }
@@ -941,8 +952,8 @@
     if (logViewOpen) renderLogList();
   });
 
-  function lastName() { try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; } }
-  function saveName(n) { try { localStorage.setItem(NAME_KEY, n); } catch (e) {} }
+  function lastName() { return sget(NAME_KEY) || ''; }
+  function saveName(n) { sset(NAME_KEY, n); }
 
   function usage(p) {
     var u = state[p];
