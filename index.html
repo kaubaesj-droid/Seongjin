@@ -838,10 +838,8 @@
   /* ===== 사용 로그 =====
      usage_logs/{시작시각}_{프로필}_{종류} 형태의 고정 키로 저장하므로
      여러 기기가 동시에 같은 이벤트를 기록해도 중복되지 않음 */
-  function writeLog(type, p, u, extra) {
-    var t = now();
-    var id = u.start + '_' + p + '_' + type + (type === 'extend' ? '_' + t : '');
-    var data = Object.assign({
+  function buildLog(type, p, u, extra) {
+    return Object.assign({
       type: type,
       profile: p,
       ott: getProfileOtt(p),
@@ -849,8 +847,14 @@
       deviceId: u.deviceId || '',
       start: u.start,
       end: u.end,
-      at: t
+      at: now()
     }, extra || {});
+  }
+
+  function writeLog(type, p, u, extra) {
+    var t = now();
+    var id = u.start + '_' + p + '_' + type + (type === 'extend' ? '_' + t : '');
+    var data = buildLog(type, p, u, extra);
     return set(ref(db, 'usage_logs/' + id), data).then(function () {
       var v = document.getElementById('verInfo');
       if (v) { v.textContent = 'v2 · 로그 기능 켜짐'; v.className = 'ver-info'; }
@@ -858,6 +862,33 @@
       console.error('로그 저장 실패:', err);
       var v = document.getElementById('verInfo');
       if (v) { v.textContent = 'v2 · 로그 저장 오류: ' + (err && err.code ? err.code : err.message); v.className = 'ver-info err'; }
+    });
+  }
+
+  /* 등록 기록 보정: 현재 사용 중인데 '등록' 로그가 없으면(이전 버전 화면에서 등록한 경우 등)
+     새 버전 화면이 8초 뒤 대신 기록함. 이미 기록이 있으면 덮어쓰지 않음 */
+  var logsLoaded = false;
+  var backfilling = {};
+  function backfillStarts() {
+    if (!logsLoaded) return;
+    Object.keys(state).forEach(function (k) {
+      var u = state[k];
+      if (!u || u.end <= now()) return;
+      var id = u.start + '_' + k + '_start';
+      if (logsData[id] || backfilling[id]) return;
+      backfilling[id] = true;
+      setTimeout(function () {
+        var cur = state[k];
+        if (!cur || cur.start !== u.start || logsData[id]) { delete backfilling[id]; return; }
+        var data = buildLog('start', k, cur, { at: cur.start, backfilled: true });
+        runTransaction(ref(db, 'usage_logs/' + id), function (existing) {
+          return existing === null ? data : undefined;
+        }).catch(function (err) {
+          console.error('등록 로그 보정 실패:', err);
+        }).then(function () {
+          delete backfilling[id];
+        });
+      }, 8000);
     });
   }
 
@@ -883,6 +914,7 @@
     var prev = state;
     state = snapshot.val() || {};
     watchVanished(prev, state);
+    backfillStarts();
     render();
   });
 
@@ -895,6 +927,8 @@
   let logFilter = 'all';
   onValue(query(ref(db, 'usage_logs'), limitToLast(500)), (snapshot) => {
     logsData = snapshot.val() || {};
+    logsLoaded = true;
+    backfillStarts();
     if (logViewOpen) renderLogList();
   });
 
@@ -1440,7 +1474,8 @@
   function logDetail(l) {
     switch (l.type) {
       case 'start':
-        return formatDateTime(l.at) + ' 등록 · 종료 예정 ' + formatDateTime(l.end) + (l.plannedMin ? ' (' + l.plannedMin + '분)' : '');
+        return formatDateTime(l.at) + ' 등록 · 종료 예정 ' + formatDateTime(l.end) + (l.plannedMin ? ' (' + l.plannedMin + '분)' : '') +
+          (l.backfilled ? ' · 등록 기록이 없어 나중에 보정됨 (이전 버전 화면에서 등록했을 가능성)' : '');
       case 'extend':
         return '+' + (l.addedMin || '?') + '분 연장 · 새 종료 예정 ' + formatDateTime(l.end);
       case 'end_button':
