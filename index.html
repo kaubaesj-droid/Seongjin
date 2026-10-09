@@ -741,7 +741,7 @@
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.0.1',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.0.2',   // 하단에 표시되는 버전
     ADMIN_KEY: '1234',      // 불편사항 조회 비밀키
     LOG_PIN: '1357'         // 사용 로그 핀코드
   };
@@ -1170,6 +1170,33 @@
     });
   }
 
+  /* 사용 종료 확인 화면: 실수로 종료 버튼을 누르는 것을 방지 */
+  function openEndConfirm(p) {
+    var sheet = document.getElementById('sheet');
+    sheet.className = 'sheet';
+    sheet.textContent = '';
+
+    var title = el('h2', null, '정말로 종료하시겠습니까?');
+    title.id = 'dlgTitle';
+    sheet.appendChild(title);
+    sheet.appendChild(el('p', 'hint',
+      p + ' (' + getProfileOtt(p) + ') 사용을 지금 종료합니다. 종료하면 다른 사람이 바로 사용할 수 있게 됩니다.'));
+
+    var acts = el('div', 'actions');
+    var back = el('button', 'btn', '돌아가기');
+    back.addEventListener('click', function () { openSheet(p); });
+
+    var yes = el('button', 'btn danger', '네, 종료합니다');
+    yes.addEventListener('click', function () {
+      yes.disabled = true;
+      endUsage(p);
+    });
+
+    acts.appendChild(back);
+    acts.appendChild(yes);
+    sheet.appendChild(acts);
+  }
+
   function openSheet(p) {
     hours = null;
     logViewOpen = false;
@@ -1208,7 +1235,7 @@
         extGroup.appendChild(ext60);
         
         var end = el('button', 'btn danger', '사용 종료');
-        end.addEventListener('click', function () { endUsage(p); });
+        end.addEventListener('click', function () { openEndConfirm(p); });
 
         acts.appendChild(end);
         sheet.appendChild(acts);
