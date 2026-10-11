@@ -1856,8 +1856,12 @@
   function setStatsMode(mode) {
     if (statsMode === mode) return;
     statsMode = mode;
+    var n = new Date();
     if (mode === 'month') {
       statsAnchor = new Date(statsAnchor.getFullYear(), statsAnchor.getMonth(), 1);
+    } else if (statsAnchor.getFullYear() === n.getFullYear() && statsAnchor.getMonth() === n.getMonth()) {
+      // 이번 달에서 일별로 돌아오면 1일이 아니라 오늘로
+      statsAnchor = n;
     }
     renderStats();
   }
