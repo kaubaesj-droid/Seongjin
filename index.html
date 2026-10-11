@@ -464,9 +464,14 @@
     color: var(--muted);
   }
 
+  .footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 18px;
+  }
+
   .log-link {
-    display: block;
-    margin: 18px auto 0;
     background: none;
     border: none;
     color: var(--subtle);
@@ -666,6 +671,164 @@
   .log-detail { margin-top: 6px; font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
   .log-empty { color: var(--muted); font-size: 0.88rem; text-align: center; padding: 24px 0; }
 
+  /* Usage Stats (이용 현황) */
+  .stats-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .stats-controls .filter-bar { margin-bottom: 0; }
+  .stats-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .nav-btn {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 999px;
+    width: 32px;
+    height: 32px;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .today-btn {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--muted);
+    border-radius: 999px;
+    height: 32px;
+    padding: 0 12px;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .stats-date {
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 14px 0 20px;
+  }
+  .stats-section-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .stats-section-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin: 0 0 14px;
+  }
+  .chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 4px 2px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .chart-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .chart-val {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
+  .chart-bar-wrap {
+    width: 100%;
+    height: 150px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .chart-bar {
+    width: 70%;
+    max-width: 44px;
+    min-height: 2px;
+    border-radius: 8px 8px 0 0;
+    transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .chart-names {
+    display: flex;
+    gap: 8px;
+    padding: 6px 2px 0;
+    margin-bottom: 4px;
+  }
+  .chart-name {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .stats-total {
+    margin: 10px 0 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: right;
+  }
+  .stats-divider {
+    height: 1px;
+    background: var(--line);
+    margin: 24px 0;
+  }
+  .hbar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .hbar-label {
+    flex: 0 0 64px;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+  .hbar-track {
+    flex: 1;
+    height: 22px;
+    background: var(--surface-sub);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .hbar-fill {
+    height: 100%;
+    min-width: 2px;
+    border-radius: 8px;
+    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hbar-fill.visit { background: var(--info); }
+  .hbar-fill.reg { background: var(--free); }
+  .hbar-count {
+    flex: 0 0 44px;
+    text-align: right;
+    font-size: 0.88rem;
+    font-weight: 700;
+  }
+  .stats-foot {
+    margin-top: 6px;
+    font-size: 0.74rem;
+    color: var(--subtle);
+    line-height: 1.5;
+  }
+
   :where(button, input, textarea):focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 2px;
@@ -712,7 +875,10 @@
   <!-- 하단 만든이 푸터 -->
   <footer>
     Made for <span>세인영</span> by <span>배성진</span>
-    <button type="button" class="log-link" id="openLogBtn">사용 로그</button>
+    <div class="footer-links">
+      <button type="button" class="log-link" id="openLogBtn">사용 로그</button>
+      <button type="button" class="log-link" id="openStatsBtn">이용 현황</button>
+    </div>
     <div class="ver-info" id="verInfo"></div>
   </footer>
 </main>
@@ -741,14 +907,16 @@
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.0.2',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.1.0',   // 하단에 표시되는 버전
     ADMIN_KEY: '1234',      // 불편사항 조회 비밀키
-    LOG_PIN: '1357'         // 사용 로그 핀코드
+    LOG_PIN: '1357',        // 사용 로그 핀코드
+    STATS_PIN: '2468'       // 이용 현황 비밀번호
   };
   /* ================================================ */
 
   const ADMIN_KEY = CONFIG.ADMIN_KEY;
   const LOG_PIN = CONFIG.LOG_PIN;
+  const STATS_PIN = CONFIG.STATS_PIN;
   document.getElementById('verInfo').textContent = CONFIG.VERSION;
 
   /* 저장소(localStorage)가 막힌 브라우저에서도 동작하도록 안전하게 감싸기 */
@@ -835,6 +1003,26 @@
     return '기타';
   }
 
+  /* 이용 현황용: 넷플1·넷플2 / 티빙1·티빙2 처럼 같은 서비스는 하나로 묶음 */
+  const SERVICES = [
+    { id: 'netflix', name: '넷플', color: '#E50914', groups: ['nf1', 'nf2'] },
+    { id: 'disney', name: '디플', color: '#113CCF', groups: ['dp'] },
+    { id: 'tving', name: '티빙', color: '#FF153C', groups: ['tv1', 'tv2'] },
+    { id: 'watcha', name: '왓챠', color: '#FF0558', groups: ['wc'] },
+    { id: 'wavve', name: '웨이브', color: '#1148f3', groups: ['wv'] },
+    { id: 'laftel', name: '라프텔', color: '#816bff', groups: ['la'] }
+  ];
+
+  function getProfileService(p) {
+    for (let i = 0; i < SERVICES.length; i++) {
+      for (let j = 0; j < SERVICES[i].groups.length; j++) {
+        var g = OTT_GROUPS.find(function (x) { return x.id === SERVICES[i].groups[j]; });
+        if (g && g.profiles.includes(p)) return SERVICES[i].id;
+      }
+    }
+    return null;
+  }
+
   const DURATIONS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4];
   const NAME_KEY = 'ott-board-last-name';
   const SESSION_KEY = 'ott-board-device-session';
@@ -844,6 +1032,7 @@
   let state = {};
   let complaintsData = {};
   let logsData = {};
+  let visitsData = {};
   let hours = null;
 
   function getDeviceSessionId() {
@@ -853,6 +1042,19 @@
       sset(SESSION_KEY, sid);
     }
     return sid;
+  }
+
+  /* ===== 접속 기록 =====
+     visits/{날짜}/{기기ID} = 접속 시각. 같은 기기는 하루에 한 번만 집계됨 */
+  var lastVisitKey = '';
+  function recordVisit() {
+    var k = dateKey(new Date());
+    if (k === lastVisitKey) return;
+    lastVisitKey = k;
+    set(ref(db, 'visits/' + k + '/' + getDeviceSessionId()), Date.now()).catch(function (err) {
+      console.error('접속 기록 실패:', err);
+      lastVisitKey = '';
+    });
   }
 
   /* ===== 사용 로그 =====
@@ -936,6 +1138,7 @@
     watchVanished(prev, state);
     backfillStarts();
     render();
+    if (statsOpen) renderStats();
   });
 
   const complaintsRef = ref(db, 'complaints');
@@ -944,12 +1147,21 @@
   });
 
   let logViewOpen = false;
+  let statsOpen = false;
   let logFilter = 'all';
-  onValue(query(ref(db, 'usage_logs'), limitToLast(500)), (snapshot) => {
+  onValue(query(ref(db, 'usage_logs'), limitToLast(2000)), (snapshot) => {
     logsData = snapshot.val() || {};
     logsLoaded = true;
     backfillStarts();
     if (logViewOpen) renderLogList();
+    if (statsOpen) renderStats();
+  });
+
+  onValue(ref(db, 'visits'), (snapshot) => {
+    visitsData = snapshot.val() || {};
+    if (statsOpen) renderStats();
+  }, function (err) {
+    console.error('접속 기록 읽기 실패:', err);
   });
 
   function lastName() { return sget(NAME_KEY) || ''; }
@@ -986,6 +1198,7 @@
   }
 
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function dateKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function clock(ms) { var d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
   function formatDate(ms) {
     var d = new Date(ms);
@@ -1200,6 +1413,7 @@
   function openSheet(p) {
     hours = null;
     logViewOpen = false;
+    statsOpen = false;
     var sheet = document.getElementById('sheet');
     sheet.className = 'sheet';
     sheet.textContent = '';
@@ -1341,6 +1555,7 @@
 
   function closeSheet() {
     logViewOpen = false;
+    statsOpen = false;
     var ov = document.getElementById('overlay');
     ov.classList.remove('open'); ov.setAttribute('aria-hidden', 'true');
     document.getElementById('sheet').classList.remove('wide');
@@ -1373,6 +1588,7 @@
 
   function openAdminKeySheet() {
     logViewOpen = false;
+    statsOpen = false;
     var sheet = document.getElementById('sheet');
     sheet.className = 'sheet';
     sheet.textContent = '';
@@ -1455,33 +1671,32 @@
     sheet.appendChild(acts);
   }
 
-  /* ===== 사용 로그 열람 (PIN) ===== */
-  document.getElementById('openLogBtn').addEventListener('click', () => { openLogPinSheet(); });
-
-  function openLogPinSheet() {
+  /* ===== 핀코드 입력 화면 (사용 로그 / 이용 현황 공용) ===== */
+  function openPinSheet(titleText, pin, onSuccess) {
     logViewOpen = false;
+    statsOpen = false;
     var sheet = document.getElementById('sheet');
     sheet.className = 'sheet';
     sheet.textContent = '';
 
-    var title = el('h2', null, '사용 로그');
+    var title = el('h2', null, titleText);
     title.id = 'dlgTitle';
     sheet.appendChild(title);
-    sheet.appendChild(el('p', 'hint', '핀코드를 입력하세요.'));
+    sheet.appendChild(el('p', 'hint', '비밀번호를 입력하세요.'));
 
     var input = document.createElement('input');
     input.type = 'password';
     input.inputMode = 'numeric';
     input.maxLength = 8;
-    input.placeholder = '핀코드';
+    input.placeholder = '비밀번호';
     input.autocomplete = 'off';
     sheet.appendChild(input);
 
     function tryEnter() {
-      if (input.value === LOG_PIN) {
-        openLogSheet();
+      if (input.value === pin) {
+        onSuccess();
       } else {
-        alert('핀코드가 올바르지 않습니다.');
+        alert('비밀번호가 올바르지 않습니다.');
         input.value = '';
         input.focus();
       }
@@ -1501,6 +1716,9 @@
     ov.classList.add('open'); ov.setAttribute('aria-hidden', 'false');
     setTimeout(function () { input.focus(); }, 50);
   }
+
+  /* ===== 사용 로그 열람 (PIN) ===== */
+  document.getElementById('openLogBtn').addEventListener('click', () => { openPinSheet('사용 로그', LOG_PIN, openLogSheet); });
 
   const LOG_TYPES = {
     start: '등록',
@@ -1539,6 +1757,7 @@
 
   function openLogSheet() {
     logViewOpen = true;
+    statsOpen = false;
     var sheet = document.getElementById('sheet');
     sheet.className = 'sheet wide';
     sheet.textContent = '';
@@ -1586,7 +1805,8 @@
     var f = LOG_FILTERS.find(function (x) { return x.id === logFilter; }) || LOG_FILTERS[0];
     var rows = Object.keys(logsData).map(function (k) { return logsData[k]; })
       .filter(function (l) { return l && f.match(l.type); })
-      .sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+      .sort(function (a, b) { return (b.at || 0) - (a.at || 0); })
+      .slice(0, 500);
 
     if (rows.length === 0) {
       list.appendChild(el('p', 'log-empty', '기록이 없습니다.'));
@@ -1606,14 +1826,261 @@
     });
   }
 
+  /* ===== 이용 현황 (비밀번호) ===== */
+  var statsMode = 'day';          // 'day' | 'month'
+  var statsAnchor = new Date();   // 보고 있는 날짜(월별일 땐 그 달의 1일)
+
+  document.getElementById('openStatsBtn').addEventListener('click', () => {
+    openPinSheet('이용 현황', STATS_PIN, openStatsSheet);
+  });
+
+  function periodRange() {
+    var y = statsAnchor.getFullYear(), m = statsAnchor.getMonth(), d = statsAnchor.getDate();
+    if (statsMode === 'month') {
+      return { start: new Date(y, m, 1), end: new Date(y, m + 1, 1) };
+    }
+    return { start: new Date(y, m, d), end: new Date(y, m, d + 1) };
+  }
+
+  function periodTitle() {
+    var y = statsAnchor.getFullYear(), m = statsAnchor.getMonth() + 1, d = statsAnchor.getDate();
+    return statsMode === 'month' ? (y + '년 ' + m + '월') : (y + '년 ' + m + '월 ' + d + '일');
+  }
+
+  function shiftPeriod(dir) {
+    var y = statsAnchor.getFullYear(), m = statsAnchor.getMonth(), d = statsAnchor.getDate();
+    statsAnchor = statsMode === 'month' ? new Date(y, m + dir, 1) : new Date(y, m, d + dir);
+    renderStats();
+  }
+
+  function setStatsMode(mode) {
+    if (statsMode === mode) return;
+    statsMode = mode;
+    if (mode === 'month') {
+      statsAnchor = new Date(statsAnchor.getFullYear(), statsAnchor.getMonth(), 1);
+    }
+    renderStats();
+  }
+
+  /* 로그를 세션(프로필+시작시각) 단위로 묶어서 실제 사용 구간을 계산 */
+  function buildSessions() {
+    var map = {};
+    function get(profile, start, user) {
+      var sk = profile + '_' + start;
+      if (!map[sk]) map[sk] = { profile: profile, start: start, end: start, user: user || '', closedAt: null, vanishedAt: null };
+      return map[sk];
+    }
+
+    Object.keys(logsData).forEach(function (k) {
+      var l = logsData[k];
+      if (!l || !l.profile || !l.start) return;
+      var s = get(l.profile, l.start, l.user);
+      if (l.user) s.user = l.user;
+      if (l.type === 'start' || l.type === 'extend' || l.type === 'expired') {
+        s.end = Math.max(s.end, l.end || 0);
+      } else if (l.type === 'end_button') {
+        s.closedAt = l.at;
+      } else if (l.type === 'vanished') {
+        s.vanishedAt = Math.min(l.scheduledEnd || l.end || l.at, l.at || Infinity);
+      }
+    });
+
+    // 로그가 아직 없는 현재 사용 중 세션도 포함
+    Object.keys(state).forEach(function (k) {
+      var u = state[k];
+      if (!u || !u.start) return;
+      var s = get(k, u.start, u.user);
+      s.end = Math.max(s.end, u.end || 0);
+    });
+
+    var t = now();
+    return Object.keys(map).map(function (sk) {
+      var s = map[sk];
+      var end = s.end;
+      if (s.closedAt) end = Math.min(end || s.closedAt, s.closedAt);
+      else if (s.vanishedAt) end = Math.min(end, s.vanishedAt);
+      end = Math.min(end, t);
+      s.finalEnd = Math.max(end, s.start);
+      return s;
+    });
+  }
+
+  function fmtHours(ms) {
+    var h = ms / 3600000;
+    var r = Math.round(h * 10) / 10;
+    return r + '시간';
+  }
+
+  function computeStats() {
+    var range = periodRange();
+    var ps = range.start.getTime(), pe = range.end.getTime();
+    var sessions = buildSessions();
+
+    var byService = {};
+    SERVICES.forEach(function (s) { byService[s.id] = 0; });
+    var regUsers = {};
+    var regCount = 0;
+
+    sessions.forEach(function (s) {
+      var svc = getProfileService(s.profile);
+      var ov = Math.max(0, Math.min(s.finalEnd, pe) - Math.max(s.start, ps));
+      if (svc && ov > 0) byService[svc] += ov;
+      if (s.start >= ps && s.start < pe) {
+        regCount++;
+        regUsers[(s.user || s.profile).toLowerCase()] = true;
+      }
+    });
+
+    var visitors = {};
+    Object.keys(visitsData).forEach(function (dk) {
+      var parts = dk.split('-');
+      if (parts.length !== 3) return;
+      var dms = new Date(+parts[0], +parts[1] - 1, +parts[2]).getTime();
+      if (dms >= ps && dms < pe) {
+        Object.keys(visitsData[dk] || {}).forEach(function (id) { visitors[id] = true; });
+      }
+    });
+
+    return {
+      byService: byService,
+      totalMs: SERVICES.reduce(function (a, s) { return a + byService[s.id]; }, 0),
+      regUsers: Object.keys(regUsers).length,
+      regCount: regCount,
+      visitors: Object.keys(visitors).length
+    };
+  }
+
+  function openStatsSheet() {
+    logViewOpen = false;
+    statsOpen = true;
+    statsMode = 'day';
+    statsAnchor = new Date();
+    var sheet = document.getElementById('sheet');
+    sheet.className = 'sheet wide';
+    sheet.textContent = '';
+
+    var title = el('h2', null, '이용 현황');
+    title.id = 'dlgTitle';
+    sheet.appendChild(title);
+
+    var body = el('div');
+    body.id = 'statsBody';
+    sheet.appendChild(body);
+
+    var acts = el('div', 'actions');
+    var close = el('button', 'btn', '닫기');
+    close.addEventListener('click', closeSheet);
+    acts.appendChild(close);
+    sheet.appendChild(acts);
+
+    renderStats();
+  }
+
+  function renderStats() {
+    var body = document.getElementById('statsBody');
+    if (!body) return;
+    body.textContent = '';
+
+    var st = computeStats();
+    var range = periodRange();
+    var tomorrow = new Date(); tomorrow = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate() + 1);
+    var isLatest = range.end.getTime() >= tomorrow.getTime();
+
+    /* 일별/월별 + 날짜 이동 */
+    var controls = el('div', 'stats-controls');
+    var seg = el('div', 'filter-bar');
+    [['day', '일별'], ['month', '월별']].forEach(function (m) {
+      var b = el('button', 'filter-btn', m[1]);
+      b.type = 'button';
+      b.setAttribute('aria-checked', statsMode === m[0] ? 'true' : 'false');
+      b.addEventListener('click', function () { setStatsMode(m[0]); });
+      seg.appendChild(b);
+    });
+    controls.appendChild(seg);
+
+    var nav = el('div', 'stats-nav');
+    var prev = el('button', 'nav-btn', '‹');
+    prev.type = 'button';
+    prev.setAttribute('aria-label', '이전');
+    prev.addEventListener('click', function () { shiftPeriod(-1); });
+    var todayBtn = el('button', 'today-btn', statsMode === 'month' ? '이번 달' : '오늘');
+    todayBtn.type = 'button';
+    todayBtn.addEventListener('click', function () {
+      var n = new Date();
+      statsAnchor = statsMode === 'month' ? new Date(n.getFullYear(), n.getMonth(), 1) : n;
+      renderStats();
+    });
+    var next = el('button', 'nav-btn', '›');
+    next.type = 'button';
+    next.setAttribute('aria-label', '다음');
+    next.disabled = isLatest;
+    next.addEventListener('click', function () { shiftPeriod(1); });
+    nav.appendChild(prev); nav.appendChild(todayBtn); nav.appendChild(next);
+    controls.appendChild(nav);
+    body.appendChild(controls);
+
+    body.appendChild(el('div', 'stats-date', periodTitle()));
+
+    /* OTT별 이용현황 (세로 막대) */
+    body.appendChild(el('h3', 'stats-section-title', 'OTT별 이용현황'));
+    body.appendChild(el('p', 'stats-section-sub', '기간 내 총 사용 시간 (프로필 합산)'));
+
+    var maxMs = Math.max.apply(null, SERVICES.map(function (s) { return st.byService[s.id]; }).concat([1]));
+    var chart = el('div', 'chart');
+    var names = el('div', 'chart-names');
+    SERVICES.forEach(function (s) {
+      var ms = st.byService[s.id];
+      var col = el('div', 'chart-col');
+      col.appendChild(el('div', 'chart-val', fmtHours(ms)));
+      var wrap = el('div', 'chart-bar-wrap');
+      var bar = el('div', 'chart-bar');
+      bar.style.background = s.color;
+      bar.style.height = Math.round((ms / maxMs) * 100) + '%';
+      if (ms === 0) bar.style.opacity = '0.25';
+      wrap.appendChild(bar);
+      col.appendChild(wrap);
+      chart.appendChild(col);
+      names.appendChild(el('div', 'chart-name', s.name));
+    });
+    body.appendChild(chart);
+    body.appendChild(names);
+    body.appendChild(el('p', 'stats-total', '전체 ' + fmtHours(st.totalMs)));
+
+    body.appendChild(el('div', 'stats-divider'));
+
+    /* 사용자수 (가로 막대) */
+    body.appendChild(el('h3', 'stats-section-title', statsMode === 'month' ? '월간 사용자수' : '일일 사용자수'));
+    body.appendChild(el('p', 'stats-section-sub', '중복 없이 사람 수 기준'));
+
+    var maxCnt = Math.max(st.visitors, st.regUsers, 1);
+    [['접속자수', st.visitors, 'visit'], ['등록자수', st.regUsers, 'reg']].forEach(function (r) {
+      var row = el('div', 'hbar-row');
+      row.appendChild(el('span', 'hbar-label', r[0]));
+      var track = el('div', 'hbar-track');
+      var fill = el('div', 'hbar-fill ' + r[2]);
+      fill.style.width = Math.round((r[1] / maxCnt) * 100) + '%';
+      if (r[1] === 0) fill.style.opacity = '0.25';
+      track.appendChild(fill);
+      row.appendChild(track);
+      row.appendChild(el('span', 'hbar-count', r[1] + '명'));
+      body.appendChild(row);
+    });
+
+    body.appendChild(el('p', 'stats-foot',
+      '접속자수는 사이트에 들어온 기기 수이고, 이 기능이 추가된 이후부터 집계됩니다. 등록자수는 기간 내에 프로필을 등록한 사람(이름 기준)입니다.'));
+  }
+
   document.getElementById('overlay').addEventListener('click', function (e) {
     if (e.target === this) closeSheet();
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
 
   renderTabs();
+  recordVisit();
   setInterval(tick, 1000);
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) purge(); });
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) { purge(); recordVisit(); }
+  });
 </script>
 </body>
 </html>
