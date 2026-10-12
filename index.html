@@ -907,7 +907,7 @@
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.1.1',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.1.2',   // 하단에 표시되는 버전
     ADMIN_KEY: '1234',      // 불편사항 조회 비밀키
     LOG_PIN: '1357',        // 사용 로그 핀코드
     STATS_PIN: '2468'       // 이용 현황 비밀번호
@@ -1073,9 +1073,13 @@
     }, extra || {});
   }
 
+  function logId(type, p, u) {
+    return u.start + '_' + p + '_' + type;
+  }
+
   function writeLog(type, p, u, extra) {
     var t = now();
-    var id = u.start + '_' + p + '_' + type + (type === 'extend' ? '_' + t : '');
+    var id = logId(type, p, u) + (type === 'extend' ? '_' + t : '');
     var data = buildLog(type, p, u, extra);
     return set(ref(db, 'usage_logs/' + id), data).then(function () {
       var v = document.getElementById('verInfo');
@@ -1114,19 +1118,25 @@
     });
   }
 
-  /* 사용 현황이 갑자기 사라졌을 때(종료 버튼/만료 기록이 없는 경우) 감지해서 기록 */
+  /* 사용 현황이 갑자기 사라졌을 때(종료 버튼/만료 기록이 없는 경우) 감지해서 기록
+     - 예정 종료 시각이 이미 지난 세션이면 '시간 만료' 로그를 대신 남김
+     - 예정 종료 전에 사라졌으면 '비정상 삭제' 로그를 남김 */
   function watchVanished(prev, next) {
     Object.keys(prev).forEach(function (k) {
       var a = prev[k];
       var b = next[k];
-      if (!a || a.end <= now() + 2000) return;
+      if (!a) return;
       if (b && b.start === a.start) return;
       setTimeout(function () {
         var cur = state[k];
         if (cur && cur.start === a.start) return;
         var base = a.start + '_' + k + '_';
         if (logsData[base + 'end_button'] || logsData[base + 'expired']) return;
-        writeLog('vanished', k, a, { detectedAt: now(), scheduledEnd: a.end });
+        if (a.end <= now()) {
+          writeLog('expired', k, a, { at: a.end, detectedAt: now() });
+        } else {
+          writeLog('vanished', k, a, { detectedAt: now(), scheduledEnd: a.end });
+        }
       }, 8000);
     });
   }
@@ -1173,7 +1183,10 @@
     return null;
   }
 
-  // 만료된 세션을 트랜잭션으로 안전하게 삭제하고, 실제로 삭제한 기기가 '만료' 로그를 남김
+  /* 만료된 세션 처리: '만료' 로그를 먼저 저장한 뒤에만 세션을 삭제함.
+     (삭제 후 로그를 쓰는 방식은 그 사이에 탭이 닫히면 로그가 영영 사라짐)
+     로그 ID가 고정이라 여러 기기가 동시에 실행해도 중복되지 않고,
+     로그 저장이 실패하면 삭제하지 않고 다음 렌더링 때 다시 시도함 */
   var purging = {};
   function purge() {
     Object.keys(state).forEach(function (k) {
@@ -1182,18 +1195,23 @@
       var token = k + '_' + u.start;
       if (purging[token]) return;
       purging[token] = true;
-      runTransaction(ref(db, 'ott_state/' + k), function (cur) {
-        if (cur && cur.start === u.start && cur.end <= now()) return null;
-        return undefined;
-      }).then(function (res) {
-        if (res.committed) {
-          writeLog('expired', k, u, { at: u.end, detectedAt: now() });
-        }
-      }).catch(function (err) {
-        console.error('만료 처리 실패:', err);
-      }).then(function () {
-        delete purging[token];
-      });
+
+      var data = buildLog('expired', k, u, { at: u.end, detectedAt: now() });
+      set(ref(db, 'usage_logs/' + logId('expired', k, u)), data)
+        .then(function () {
+          return runTransaction(ref(db, 'ott_state/' + k), function (cur) {
+            if (cur && cur.start === u.start && cur.end <= now()) return null;
+            return undefined;
+          });
+        })
+        .catch(function (err) {
+          console.error('만료 처리 실패:', err);
+          var v = document.getElementById('verInfo');
+          if (v) { v.textContent = CONFIG.VERSION + ' · 만료 처리 오류: ' + (err && err.code ? err.code : err.message); v.className = 'ver-info err'; }
+        })
+        .then(function () {
+          delete purging[token];
+        });
     });
   }
 
