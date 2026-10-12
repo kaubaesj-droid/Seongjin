@@ -1843,82 +1843,161 @@
       list.appendChild(box);
     });
   }
-/* ===== 특정 OTT 서비스의 사용자별 이용 시간 집계 ===== */
-  function computeOttUserDetails(serviceId) {
-    var range = periodRange();
-    var ps = range.start.getTime(), pe = range.end.getTime();
-    var sessions = buildSessions();
-    var userMap = {}; // { "홍길동123": totalMs }
 
-    sessions.forEach(function (s) {
-      var svc = getProfileService(s.profile);
-      if (svc !== serviceId) return;
+  /* ===== 이용 현황 (비밀번호) ===== */
+  var statsMode = 'day';          // 'day' | 'month'
+  var statsAnchor = new Date();   // 보고 있는 날짜(월별일 땐 그 달의 1일)
 
-      var ov = Math.max(0, Math.min(s.finalEnd, pe) - Math.max(s.start, ps));
-      if (ov > 0) {
-        var uName = s.user || '익명';
-        userMap[uName] = (userMap[uName] || 0) + ov;
+  document.getElementById('openStatsBtn').addEventListener('click', () => {
+    openPinSheet('이용 현황', STATS_PIN, openStatsSheet);
+  });
+
+  function periodRange() {
+    var y = statsAnchor.getFullYear(), m = statsAnchor.getMonth(), d = statsAnchor.getDate();
+    if (statsMode === 'month') {
+      return { start: new Date(y, m, 1), end: new Date(y, m + 1, 1) };
+    }
+    return { start: new Date(y, m, d), end: new Date(y, m, d + 1) };
+  }
+
+  function periodTitle() {
+    var y = statsAnchor.getFullYear(), m = statsAnchor.getMonth() + 1, d = statsAnchor.getDate();
+    return statsMode === 'month' ? (y + '년 ' + m + '월') : (y + '년 ' + m + '월 ' + d + '일');
+  }
+
+  function shiftPeriod(dir) {
+    var y = statsAnchor.getFullYear(), m = statsAnchor.getMonth(), d = statsAnchor.getDate();
+    statsAnchor = statsMode === 'month' ? new Date(y, m + dir, 1) : new Date(y, m, d + dir);
+    renderStats();
+  }
+
+  function setStatsMode(mode) {
+    if (statsMode === mode) return;
+    statsMode = mode;
+    var n = new Date();
+    if (mode === 'month') {
+      statsAnchor = new Date(statsAnchor.getFullYear(), statsAnchor.getMonth(), 1);
+    } else if (statsAnchor.getFullYear() === n.getFullYear() && statsAnchor.getMonth() === n.getMonth()) {
+      // 이번 달에서 일별로 돌아오면 1일이 아니라 오늘로
+      statsAnchor = n;
+    }
+    renderStats();
+  }
+
+  /* 로그를 세션(프로필+시작시각) 단위로 묶어서 실제 사용 구간을 계산 */
+  function buildSessions() {
+    var map = {};
+    function get(profile, start, user) {
+      var sk = profile + '_' + start;
+      if (!map[sk]) map[sk] = { profile: profile, start: start, end: start, user: user || '', closedAt: null, vanishedAt: null };
+      return map[sk];
+    }
+
+    Object.keys(logsData).forEach(function (k) {
+      var l = logsData[k];
+      if (!l || !l.profile || !l.start) return;
+      var s = get(l.profile, l.start, l.user);
+      if (l.user) s.user = l.user;
+      if (l.type === 'start' || l.type === 'extend' || l.type === 'expired') {
+        s.end = Math.max(s.end, l.end || 0);
+      } else if (l.type === 'end_button') {
+        s.closedAt = l.at;
+      } else if (l.type === 'vanished') {
+        s.vanishedAt = Math.min(l.scheduledEnd || l.end || l.at, l.at || Infinity);
       }
     });
 
-    // 사용시간이 긴 순서대로 정렬
-    return Object.keys(userMap).map(function (u) {
-      return { user: u, ms: userMap[u] };
-    }).sort(function (a, b) { return b.ms - a.ms; });
+    // 로그가 아직 없는 현재 사용 중 세션도 포함
+    Object.keys(state).forEach(function (k) {
+      var u = state[k];
+      if (!u || !u.start) return;
+      var s = get(k, u.start, u.user);
+      s.end = Math.max(s.end, u.end || 0);
+    });
+
+    var t = now();
+    return Object.keys(map).map(function (sk) {
+      var s = map[sk];
+      var end = s.end;
+      if (s.closedAt) end = Math.min(end || s.closedAt, s.closedAt);
+      else if (s.vanishedAt) end = Math.min(end, s.vanishedAt);
+      end = Math.min(end, t);
+      s.finalEnd = Math.max(end, s.start);
+      return s;
+    });
   }
 
-  /* ===== OTT 사용자 상세 팝업 창 ===== */
-  function openOttDetailSheet(service) {
+  function fmtHours(ms) {
+    var h = ms / 3600000;
+    var r = Math.round(h * 10) / 10;
+    return r + '시간';
+  }
+
+  function computeStats() {
+    var range = periodRange();
+    var ps = range.start.getTime(), pe = range.end.getTime();
+    var sessions = buildSessions();
+
+    var byService = {};
+    SERVICES.forEach(function (s) { byService[s.id] = 0; });
+    var regUsers = {};
+    var regCount = 0;
+
+    sessions.forEach(function (s) {
+      var svc = getProfileService(s.profile);
+      var ov = Math.max(0, Math.min(s.finalEnd, pe) - Math.max(s.start, ps));
+      if (svc && ov > 0) byService[svc] += ov;
+      if (s.start >= ps && s.start < pe) {
+        regCount++;
+        regUsers[(s.user || s.profile).toLowerCase()] = true;
+      }
+    });
+
+    var visitors = {};
+    Object.keys(visitsData).forEach(function (dk) {
+      var parts = dk.split('-');
+      if (parts.length !== 3) return;
+      var dms = new Date(+parts[0], +parts[1] - 1, +parts[2]).getTime();
+      if (dms >= ps && dms < pe) {
+        Object.keys(visitsData[dk] || {}).forEach(function (id) { visitors[id] = true; });
+      }
+    });
+
+    return {
+      byService: byService,
+      totalMs: SERVICES.reduce(function (a, s) { return a + byService[s.id]; }, 0),
+      regUsers: Object.keys(regUsers).length,
+      regCount: regCount,
+      visitors: Object.keys(visitors).length
+    };
+  }
+
+  function openStatsSheet() {
+    logViewOpen = false;
+    statsOpen = true;
+    statsMode = 'day';
+    statsAnchor = new Date();
     var sheet = document.getElementById('sheet');
-    sheet.className = 'sheet';
+    sheet.className = 'sheet wide';
     sheet.textContent = '';
 
-    var title = el('h2', null, service.name + ' 이용 상세');
+    var title = el('h2', null, '이용 현황');
     title.id = 'dlgTitle';
     sheet.appendChild(title);
-    sheet.appendChild(el('p', 'hint', periodTitle() + ' 동안의 사용자별 총 이용 시간입니다.'));
 
-    var userList = computeOttUserDetails(service.id);
-
-    if (userList.length === 0) {
-      sheet.appendChild(el('p', 'log-empty', '해당 기간 동안 이용 기록이 없습니다.'));
-    } else {
-      var listContainer = el('div');
-      listContainer.style.margin = '16px 0';
-      listContainer.style.display = 'flex';
-      listContainer.style.flexDirection = 'column';
-      listContainer.style.gap = '8px';
-
-      userList.forEach(function (item) {
-        var row = el('div', 'log-item');
-        row.style.display = 'flex';
-        row.style.justifyContent = 'space-between';
-        row.style.alignItems = 'center';
-
-        var nameSpan = el('span', 'log-who', item.user);
-        var timeSpan = el('span', 'log-time', fmtHours(item.ms));
-        timeSpan.style.fontSize = '0.9rem';
-        timeSpan.style.fontWeight = '700';
-        timeSpan.style.color = 'var(--ink)';
-
-        row.appendChild(nameSpan);
-        row.appendChild(timeSpan);
-        listContainer.appendChild(row);
-      });
-
-      sheet.appendChild(listContainer);
-    }
+    var body = el('div');
+    body.id = 'statsBody';
+    sheet.appendChild(body);
 
     var acts = el('div', 'actions');
-    var backBtn = el('button', 'btn primary', '돌아가기');
-    backBtn.addEventListener('click', function () {
-      openStatsSheet(); // 다시 이용 현황 화면으로 이동
-    });
-    acts.appendChild(backBtn);
+    var close = el('button', 'btn', '닫기');
+    close.addEventListener('click', closeSheet);
+    acts.appendChild(close);
     sheet.appendChild(acts);
+
+    renderStats();
   }
 
-  /* ===== renderStats() 수정 : 막대 클릭 이벤트 추가 ===== */
   function renderStats() {
     var body = document.getElementById('statsBody');
     if (!body) return;
@@ -1966,7 +2045,7 @@
 
     /* OTT별 이용현황 (세로 막대) */
     body.appendChild(el('h3', 'stats-section-title', 'OTT별 이용현황'));
-    body.appendChild(el('p', 'stats-section-sub', '기간 내 총 사용 시간 (클릭 시 사용자별 상세 보기)'));
+    body.appendChild(el('p', 'stats-section-sub', '기간 내 총 사용 시간 (프로필 합산)'));
 
     var maxMs = Math.max.apply(null, SERVICES.map(function (s) { return st.byService[s.id]; }).concat([1]));
     var chart = el('div', 'chart');
@@ -1974,8 +2053,6 @@
     SERVICES.forEach(function (s) {
       var ms = st.byService[s.id];
       var col = el('div', 'chart-col');
-      col.style.cursor = 'pointer'; // 클릭 가능 표시
-
       col.appendChild(el('div', 'chart-val', fmtHours(ms)));
       var wrap = el('div', 'chart-bar-wrap');
       var bar = el('div', 'chart-bar');
@@ -1985,17 +2062,7 @@
       wrap.appendChild(bar);
       col.appendChild(wrap);
       chart.appendChild(col);
-
-      var nameEl = el('div', 'chart-name', s.name);
-      nameEl.style.cursor = 'pointer';
-      names.appendChild(nameEl);
-
-      // 🖱️ 막대 그래프 및 이름 클릭 이벤트
-      function onClickDetail() {
-        openOttDetailSheet(s);
-      }
-      col.addEventListener('click', onClickDetail);
-      nameEl.addEventListener('click', onClickDetail);
+      names.appendChild(el('div', 'chart-name', s.name));
     });
     body.appendChild(chart);
     body.appendChild(names);
@@ -2024,7 +2091,6 @@
     body.appendChild(el('p', 'stats-foot',
       '접속자수는 사이트에 들어온 기기 수이고, 이 기능이 추가된 이후부터 집계됩니다. 등록자수는 기간 내에 프로필을 등록한 사람(이름 기준)입니다.'));
   }
-  
 
   document.getElementById('overlay').addEventListener('click', function (e) {
     if (e.target === this) closeSheet();
