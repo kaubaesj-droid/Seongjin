@@ -672,6 +672,19 @@
   .log-empty { color: var(--muted); font-size: 0.88rem; text-align: center; padding: 24px 0; }
 
   /* Usage Stats (이용 현황) */
+  .stats-mode-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 6px 0 14px;
+  }
+  .stats-mode-row .filter-bar { margin-bottom: 0; }
+  .stats-mode-hint {
+    font-size: 0.74rem;
+    color: var(--subtle);
+  }
   .stats-controls {
     display: flex;
     align-items: center;
@@ -743,7 +756,18 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
+    /* 클릭 가능한 막대 (button 기본 스타일 제거) */
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
   }
+  .chart-col.dim { opacity: 0.35; }
+  .chart-col:hover { opacity: 1; }
   .chart-val {
     font-size: 0.74rem;
     font-weight: 700;
@@ -778,12 +802,61 @@
     font-size: 0.78rem;
     font-weight: 600;
     color: var(--muted);
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .chart-name.sel { color: var(--ink); font-weight: 700; }
+  .chart-tip {
+    margin: 8px 0 0;
+    font-size: 0.74rem;
+    color: var(--subtle);
+    text-align: center;
   }
   .stats-total {
     margin: 10px 0 0;
     font-size: 0.8rem;
     color: var(--muted);
     text-align: right;
+  }
+  .detail-box {
+    background: var(--surface-sub);
+    border-radius: var(--radius-md);
+    padding: 14px 16px 6px;
+    margin-top: 14px;
+  }
+  .detail-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .detail-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  .detail-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+  .detail-close:hover { background: var(--surface); }
+  .detail-empty {
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 8px 0 14px;
   }
   .stats-divider {
     height: 1px;
@@ -801,6 +874,12 @@
     font-size: 0.88rem;
     font-weight: 600;
   }
+  .hbar-label.wide {
+    flex: 0 0 88px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .hbar-track {
     flex: 1;
     height: 22px;
@@ -808,6 +887,7 @@
     border-radius: 8px;
     overflow: hidden;
   }
+  .detail-box .hbar-track { background: var(--surface); }
   .hbar-fill {
     height: 100%;
     min-width: 2px;
@@ -822,6 +902,7 @@
     font-size: 0.88rem;
     font-weight: 700;
   }
+  .hbar-count.wide { flex: 0 0 60px; }
   .stats-foot {
     margin-top: 6px;
     font-size: 0.74rem;
@@ -907,7 +988,7 @@
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.1.2',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.1.3',   // 하단에 표시되는 버전
     ADMIN_KEY: '1234',      // 불편사항 조회 비밀키
     LOG_PIN: '1357',        // 사용 로그 핀코드
     STATS_PIN: '2468'       // 이용 현황 비밀번호
@@ -1847,6 +1928,8 @@
   /* ===== 이용 현황 (비밀번호) ===== */
   var statsMode = 'day';          // 'day' | 'month'
   var statsAnchor = new Date();   // 보고 있는 날짜(월별일 땐 그 달의 1일)
+  var statsDedup = true;          // true: 중복 제거 / false: 중복 허용
+  var statsSelected = null;       // OTT별 이용현황에서 선택된 서비스 id (없으면 null)
 
   document.getElementById('openStatsBtn').addEventListener('click', () => {
     openPinSheet('이용 현황', STATS_PIN, openStatsSheet);
@@ -1939,36 +2022,53 @@
     var sessions = buildSessions();
 
     var byService = {};
-    SERVICES.forEach(function (s) { byService[s.id] = 0; });
+    var byServiceUser = {};   // 서비스별 → 사용자별 사용 시간(ms)
+    SERVICES.forEach(function (s) { byService[s.id] = 0; byServiceUser[s.id] = {}; });
     var regUsers = {};
     var regCount = 0;
 
     sessions.forEach(function (s) {
       var svc = getProfileService(s.profile);
       var ov = Math.max(0, Math.min(s.finalEnd, pe) - Math.max(s.start, ps));
-      if (svc && ov > 0) byService[svc] += ov;
+      if (svc && ov > 0) {
+        byService[svc] += ov;
+        var uname = s.user || s.profile;
+        var ukey = uname.toLowerCase();
+        var bucket = byServiceUser[svc];
+        if (!bucket[ukey]) bucket[ukey] = { name: uname, ms: 0 };
+        bucket[ukey].ms += ov;
+      }
       if (s.start >= ps && s.start < pe) {
         regCount++;
         regUsers[(s.user || s.profile).toLowerCase()] = true;
       }
     });
 
-    var visitors = {};
+    /* 접속자: 같은 기기는 하루에 한 번만 기록되므로
+       - 중복 제거: 기간 내 서로 다른 기기 수
+       - 중복 허용: (날짜, 기기) 방문 횟수의 합 */
+    var visitorSet = {};
+    var visitTotal = 0;
     Object.keys(visitsData).forEach(function (dk) {
       var parts = dk.split('-');
       if (parts.length !== 3) return;
       var dms = new Date(+parts[0], +parts[1] - 1, +parts[2]).getTime();
       if (dms >= ps && dms < pe) {
-        Object.keys(visitsData[dk] || {}).forEach(function (id) { visitors[id] = true; });
+        Object.keys(visitsData[dk] || {}).forEach(function (id) {
+          visitorSet[id] = true;
+          visitTotal++;
+        });
       }
     });
 
     return {
       byService: byService,
+      byServiceUser: byServiceUser,
       totalMs: SERVICES.reduce(function (a, s) { return a + byService[s.id]; }, 0),
-      regUsers: Object.keys(regUsers).length,
-      regCount: regCount,
-      visitors: Object.keys(visitors).length
+      regUsers: Object.keys(regUsers).length,   // 중복 제거 (사람 수)
+      regCount: regCount,                        // 중복 허용 (등록 횟수)
+      visitorsUnique: Object.keys(visitorSet).length,
+      visitorsTotal: visitTotal
     };
   }
 
@@ -1977,6 +2077,8 @@
     statsOpen = true;
     statsMode = 'day';
     statsAnchor = new Date();
+    statsDedup = true;
+    statsSelected = null;
     var sheet = document.getElementById('sheet');
     sheet.className = 'sheet wide';
     sheet.textContent = '';
@@ -1998,6 +2100,46 @@
     renderStats();
   }
 
+  /* 선택한 OTT를 누가 몇 시간 이용했는지 보여주는 상세 박스 */
+  function renderServiceDetail(body, st) {
+    var svc = SERVICES.find(function (s) { return s.id === statsSelected; });
+    if (!svc) return;
+
+    var box = el('div', 'detail-box');
+    var head = el('div', 'detail-head');
+    head.appendChild(el('h4', 'detail-title', svc.name + ' 이용자별 사용 시간'));
+    var closeBtn = el('button', 'detail-close', '닫기 ✕');
+    closeBtn.type = 'button';
+    closeBtn.addEventListener('click', function () { statsSelected = null; renderStats(); });
+    head.appendChild(closeBtn);
+    box.appendChild(head);
+
+    var bucket = st.byServiceUser[svc.id] || {};
+    var rows = Object.keys(bucket).map(function (k) { return bucket[k]; })
+      .sort(function (a, b) { return b.ms - a.ms; });
+
+    if (rows.length === 0) {
+      box.appendChild(el('p', 'detail-empty', '이 기간에 ' + svc.name + ' 이용 기록이 없습니다.'));
+    } else {
+      var maxMs = rows[0].ms || 1;
+      rows.forEach(function (r) {
+        var row = el('div', 'hbar-row');
+        var label = el('span', 'hbar-label wide', r.name);
+        label.title = r.name;
+        row.appendChild(label);
+        var track = el('div', 'hbar-track');
+        var fill = el('div', 'hbar-fill');
+        fill.style.background = svc.color;
+        fill.style.width = Math.max(2, Math.round((r.ms / maxMs) * 100)) + '%';
+        track.appendChild(fill);
+        row.appendChild(track);
+        row.appendChild(el('span', 'hbar-count wide', fmtHours(r.ms)));
+        box.appendChild(row);
+      });
+    }
+    body.appendChild(box);
+  }
+
   function renderStats() {
     var body = document.getElementById('statsBody');
     if (!body) return;
@@ -2007,6 +2149,24 @@
     var range = periodRange();
     var tomorrow = new Date(); tomorrow = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate() + 1);
     var isLatest = range.end.getTime() >= tomorrow.getTime();
+
+    /* 중복 허용 / 중복 제거 토글 (이용 현황 맨 위) */
+    var modeRow = el('div', 'stats-mode-row');
+    var dseg = el('div', 'filter-bar');
+    [[true, '중복 제거'], [false, '중복 허용']].forEach(function (m) {
+      var b = el('button', 'filter-btn', m[1]);
+      b.type = 'button';
+      b.setAttribute('aria-checked', statsDedup === m[0] ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        if (statsDedup === m[0]) return;
+        statsDedup = m[0];
+        renderStats();
+      });
+      dseg.appendChild(b);
+    });
+    modeRow.appendChild(dseg);
+    modeRow.appendChild(el('span', 'stats-mode-hint', '사용자수 집계 방식'));
+    body.appendChild(modeRow);
 
     /* 일별/월별 + 날짜 이동 */
     var controls = el('div', 'stats-controls');
@@ -2043,16 +2203,26 @@
 
     body.appendChild(el('div', 'stats-date', periodTitle()));
 
-    /* OTT별 이용현황 (세로 막대) */
+    /* OTT별 이용현황 (세로 막대, 클릭하면 이용자별 시간 표시) */
     body.appendChild(el('h3', 'stats-section-title', 'OTT별 이용현황'));
     body.appendChild(el('p', 'stats-section-sub', '기간 내 총 사용 시간 (프로필 합산)'));
+
+    function toggleService(id) {
+      statsSelected = (statsSelected === id) ? null : id;
+      renderStats();
+    }
 
     var maxMs = Math.max.apply(null, SERVICES.map(function (s) { return st.byService[s.id]; }).concat([1]));
     var chart = el('div', 'chart');
     var names = el('div', 'chart-names');
     SERVICES.forEach(function (s) {
       var ms = st.byService[s.id];
-      var col = el('div', 'chart-col');
+      var isSel = statsSelected === s.id;
+      var col = el('button', 'chart-col' + (statsSelected && !isSel ? ' dim' : ''));
+      col.type = 'button';
+      col.setAttribute('aria-label', s.name + ' 이용자별 사용 시간 보기');
+      col.setAttribute('aria-pressed', isSel ? 'true' : 'false');
+      col.addEventListener('click', function () { toggleService(s.id); });
       col.appendChild(el('div', 'chart-val', fmtHours(ms)));
       var wrap = el('div', 'chart-bar-wrap');
       var bar = el('div', 'chart-bar');
@@ -2062,20 +2232,35 @@
       wrap.appendChild(bar);
       col.appendChild(wrap);
       chart.appendChild(col);
-      names.appendChild(el('div', 'chart-name', s.name));
+
+      var nm = el('button', 'chart-name' + (isSel ? ' sel' : ''), s.name);
+      nm.type = 'button';
+      nm.addEventListener('click', function () { toggleService(s.id); });
+      names.appendChild(nm);
     });
     body.appendChild(chart);
     body.appendChild(names);
     body.appendChild(el('p', 'stats-total', '전체 ' + fmtHours(st.totalMs)));
 
+    if (statsSelected) {
+      renderServiceDetail(body, st);
+    } else {
+      body.appendChild(el('p', 'chart-tip', '막대를 누르면 누가 몇 시간 이용했는지 볼 수 있어요'));
+    }
+
     body.appendChild(el('div', 'stats-divider'));
 
-    /* 사용자수 (가로 막대) */
+    /* 사용자수 (가로 막대) — 중복 제거 / 중복 허용에 따라 집계 방식이 바뀜 */
     body.appendChild(el('h3', 'stats-section-title', statsMode === 'month' ? '월간 사용자수' : '일일 사용자수'));
-    body.appendChild(el('p', 'stats-section-sub', '중복 없이 사람 수 기준'));
+    body.appendChild(el('p', 'stats-section-sub',
+      statsDedup ? '중복 제거 · 중복 없이 사람(기기) 수 기준' : '중복 허용 · 방문·등록 횟수 그대로 집계'));
 
-    var maxCnt = Math.max(st.visitors, st.regUsers, 1);
-    [['접속자수', st.visitors, 'visit'], ['등록자수', st.regUsers, 'reg']].forEach(function (r) {
+    var visitVal = statsDedup ? st.visitorsUnique : st.visitorsTotal;
+    var regVal = statsDedup ? st.regUsers : st.regCount;
+    var unit = statsDedup ? '명' : '회';
+
+    var maxCnt = Math.max(visitVal, regVal, 1);
+    [['접속자수', visitVal, 'visit'], ['등록자수', regVal, 'reg']].forEach(function (r) {
       var row = el('div', 'hbar-row');
       row.appendChild(el('span', 'hbar-label', r[0]));
       var track = el('div', 'hbar-track');
@@ -2084,12 +2269,13 @@
       if (r[1] === 0) fill.style.opacity = '0.25';
       track.appendChild(fill);
       row.appendChild(track);
-      row.appendChild(el('span', 'hbar-count', r[1] + '명'));
+      row.appendChild(el('span', 'hbar-count', r[1] + unit));
       body.appendChild(row);
     });
 
-    body.appendChild(el('p', 'stats-foot',
-      '접속자수는 사이트에 들어온 기기 수이고, 이 기능이 추가된 이후부터 집계됩니다. 등록자수는 기간 내에 프로필을 등록한 사람(이름 기준)입니다.'));
+    body.appendChild(el('p', 'stats-foot', statsDedup
+      ? '접속자수는 기간 내 사이트에 들어온 서로 다른 기기 수이고, 이 기능이 추가된 이후부터 집계됩니다. 등록자수는 기간 내에 프로필을 등록한 사람(이름 기준)입니다.'
+      : '중복 허용: 접속자수는 날짜별 접속 기기 수를 모두 더한 값(같은 기기도 다른 날이면 각각 집계, 같은 날은 1회)이고, 등록자수는 같은 사람이 여러 번 등록해도 등록한 횟수만큼 집계합니다. 일별 보기에서는 접속자수가 중복 제거와 같을 수 있습니다.'));
   }
 
   document.getElementById('overlay').addEventListener('click', function (e) {
