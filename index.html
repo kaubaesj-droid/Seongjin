@@ -2344,8 +2344,8 @@
     });
 
     body.appendChild(el('p', 'stats-foot', statsDedup
-      ? '접속자수는 기간 내 사이트에 들어온 서로 다른 기기 수이고, 이 기능이 추가된 이후부터 집계됩니다. 등록자수는 기간 내에 프로필을 등록한 사람(이름 기준)입니다.'
-      : '중복 허용: 접속자수는 날짜별 접속 기기 수를 모두 더한 값(같은 기기도 다른 날이면 각각 집계, 같은 날은 1회)이고, 등록자수는 같은 사람이 여러 번 등록해도 등록한 횟수만큼 집계합니다. 일별 보기에서는 접속자수가 중복 제거와 같을 수 있습니다.'));
+      ? '접속자수는 기간 내 사이트에 들어온 서로 다른 기기 수이고, 등록자수는 기간 내에 프로필을 등록한 사람(이름 기준)입니다.'
+      : '접속자수는 날짜별 접속 기기 수를 모두 더한 값이고, 등록자수는 같은 사람이 여러 번 등록해도 등록한 횟수만큼 집계합니다.'));
 
     renderHeatmap(body);
   }
@@ -2435,7 +2435,7 @@
     wrap.appendChild(el('p', 'stats-section-sub', '게시하면 모든 사용자 화면 상단에 표시됩니다.'));
     var ta = document.createElement('textarea');
     ta.maxLength = 200;
-    ta.placeholder = '예) 왓챠 비밀번호가 변경되었습니다.';
+    ta.placeholder = '공지할 내용을 입력해주세요.';
     ta.value = (announcement && announcement.text) || '';
     wrap.appendChild(ta);
 
