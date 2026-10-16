@@ -913,10 +913,37 @@
     outline: 2px solid var(--ink);
     outline-offset: 2px;
   }
+
+  /* ===== v1.2.0 추가 스타일 ===== */
+  .notice{display:flex;align-items:flex-start;gap:10px;background:var(--warn-bg);border:1px solid var(--warn);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:16px;font-size:.88rem}
+  .notice[hidden]{display:none}
+  .notice-text{flex:1;white-space:pre-wrap;word-break:break-word}
+  .notice-x{background:none;border:none;color:var(--muted);cursor:pointer;font:inherit;padding:0 2px}
+  .my-banner{display:none;position:sticky;top:8px;z-index:50;width:100%;margin-bottom:16px;padding:12px 16px;border:none;border-radius:var(--radius-md);background:var(--accent);color:var(--accent-ink);font:inherit;font-size:.88rem;font-weight:600;text-align:left;cursor:pointer;box-shadow:var(--shadow-md)}
+  .my-banner.show{display:flex;justify-content:space-between;align-items:center}
+  .my-banner.show::after{content:'›';font-size:1.1rem}
+  .search-wrap{margin-bottom:16px}
+  .card-top{gap:4px}
+  .card-top .ott-tag{margin-left:auto;margin-right:6px}
+  .card-top .fav{margin-left:auto;font-size:1.05rem;line-height:1;color:var(--subtle);cursor:pointer;padding:2px}
+  .card-top .ott-tag + .fav{margin-left:0}
+  .fav.on{color:var(--warn)}
+  .log-type.t-admin_end{background:var(--busy-bg);color:var(--busy)}
+  .log-type.t-admin_edit{background:var(--info-bg);color:var(--info)}
+  .admin-sec{margin:22px 0 4px}
+  .admin-row-actions{display:flex;gap:8px;margin-top:10px}
+  .admin-row-actions .btn{padding:8px;font-size:.82rem}
+  .heat{display:grid;grid-template-columns:22px repeat(24,1fr);gap:2px;align-items:center}
+  .heat-h{font-size:.62rem;color:var(--subtle);text-align:center;white-space:nowrap}
+  .heat-d{font-size:.72rem;font-weight:600;color:var(--muted)}
+  .heat-cell{aspect-ratio:1;border-radius:3px;background:var(--surface-sub)}
+  .heat-cell.on{background:var(--info)}
 </style>
 </head>
 <body>
 <main>
+  <div class="notice" id="notice" hidden></div>
+  <button type="button" class="my-banner" id="myBanner"></button>
   <div class="header-area">
     <h1>세인영 OTT 공유 현황</h1>
     <button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="테마 변경">
@@ -935,6 +962,7 @@
     <button type="button" class="filter-btn" data-status="busy" aria-checked="false">사용 중</button>
   </div>
 
+  <div class="search-wrap"><input type="text" id="searchInput" placeholder="프로필 · 서비스 · 사용자 검색" autocomplete="off"></div>
   <div class="summary" id="summary"></div>
   <div class="grid" id="grid"></div>
   <p class="note">실시간 데이터베이스와 연결되어 모든 사용자에게 공통으로 공유됩니다.</p>
@@ -943,7 +971,7 @@
   <section class="complaint-section">
     <div class="complaint-header">
       <h2>불편사항 / 문의하기</h2>
-      <button type="button" class="admin-btn" id="openAdminBtn">조회하기</button>
+      <button type="button" class="admin-btn" id="openAdminBtn">관리자</button>
     </div>
     <div class="complaint-form">
       <input type="text" id="complaintUser" placeholder="이름 (선택)" maxlength="20">
@@ -987,7 +1015,7 @@
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.1.3',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.2.0',   // 하단에 표시되는 버전
     ADMIN_KEY: '1234',      // 불편사항 조회 비밀키
     LOG_PIN: '1357',        // 사용 로그 핀코드
     STATS_PIN: '2468'       // 이용 현황 비밀번호
@@ -1114,6 +1142,7 @@
   let logsData = {};
   let visitsData = {};
   let hours = null;
+  let announcement = null;
 
   function getDeviceSessionId() {
     let sid = sget(SESSION_KEY);
@@ -1159,7 +1188,7 @@
 
   function writeLog(type, p, u, extra) {
     var t = now();
-    var id = logId(type, p, u) + (type === 'extend' ? '_' + t : '');
+    var id = logId(type, p, u) + ((type === 'extend' || type === 'admin_edit') ? '_' + t : '');
     var data = buildLog(type, p, u, extra);
     return set(ref(db, 'usage_logs/' + id), data).then(function () {
       var v = document.getElementById('verInfo');
@@ -1211,7 +1240,7 @@
         var cur = state[k];
         if (cur && cur.start === a.start) return;
         var base = a.start + '_' + k + '_';
-        if (logsData[base + 'end_button'] || logsData[base + 'expired']) return;
+        if (logsData[base + 'end_button'] || logsData[base + 'expired'] || logsData[base + 'admin_end']) return;
         if (a.end <= now()) {
           writeLog('expired', k, a, { at: a.end, detectedAt: now() });
         } else {
@@ -1229,6 +1258,11 @@
     backfillStarts();
     render();
     if (statsOpen) renderStats();
+  });
+
+  onValue(ref(db, 'announcement'), (snapshot) => {
+    announcement = snapshot.val();
+    renderNotice();
   });
 
   const complaintsRef = ref(db, 'complaints');
@@ -1340,6 +1374,7 @@
       paint(u, card.querySelector('.live-meta'), card.querySelector('.live-bar'), card.querySelector('.live-bar > i'));
     });
     if (expired) purge();
+    renderMyBanner();
   }
 
   document.querySelectorAll('#filterBar .filter-btn').forEach(btn => {
@@ -1374,9 +1409,19 @@
   }
 
   function render() {
+    renderMyBanner();
     purge();
     const activeGroup = OTT_GROUPS.find(g => g.id === currentCategory) || OTT_GROUPS[0];
-    let targetProfiles = activeGroup.profiles;
+    var q = searchQ();
+    let targetProfiles = (q ? ALL_PROFILES : activeGroup.profiles).filter(function (p) {
+      if (!q) return true;
+      var uu = usage(p);
+      return p.toLowerCase().includes(q) || getProfileOtt(p).toLowerCase().includes(q) || !!(uu && uu.user.toLowerCase().includes(q));
+    });
+    var favs = getFavs();
+    targetProfiles = targetProfiles.slice().sort(function (a, b) {
+      return (favs.includes(b) ? 1 : 0) - (favs.includes(a) ? 1 : 0);
+    });
 
     if (statusFilter === 'free') {
       targetProfiles = targetProfiles.filter(p => !usage(p));
@@ -1418,9 +1463,14 @@
       
       var cardTop = el('div', 'card-top');
       cardTop.appendChild(el('span', 'name', p));
-      if (currentCategory === 'all') {
+      if (currentCategory === 'all' || q) {
         cardTop.appendChild(el('span', 'ott-tag', getProfileOtt(p)));
       }
+      var star = el('span', 'fav' + (isFav(p) ? ' on' : ''), isFav(p) ? '★' : '☆');
+      star.setAttribute('role', 'button');
+      star.setAttribute('aria-label', '즐겨찾기');
+      star.addEventListener('click', function (e) { e.stopPropagation(); toggleFav(p); render(); });
+      cardTop.appendChild(star);
       card.appendChild(cardTop);
 
       card.appendChild(el('span', 'badge', u ? '사용 중' : '사용 가능'));
@@ -1726,10 +1776,12 @@
     sheet.className = 'sheet';
     sheet.textContent = '';
 
-    var title = el('h2', null, '접수된 불편사항');
+    var title = el('h2', null, '관리자');
     title.id = 'dlgTitle';
     sheet.appendChild(title);
 
+    sheet.appendChild(buildAdminTools());
+    sheet.appendChild(el('h3', 'stats-section-title admin-sec', '불편사항'));
     const keys = Object.keys(complaintsData);
     if (keys.length === 0) {
       sheet.appendChild(el('p', 'hint', '접수된 불편사항이 없습니다.'));
@@ -1823,7 +1875,9 @@
     extend: '연장',
     end_button: '종료 버튼',
     expired: '시간 만료',
-    vanished: '비정상 삭제'
+    vanished: '비정상 삭제',
+    admin_end: '관리자 종료',
+    admin_edit: '관리자 수정'
   };
 
   const LOG_FILTERS = [
@@ -1831,7 +1885,8 @@
     { id: 'start', label: '등록', match: function (t) { return t === 'start'; } },
     { id: 'extend', label: '연장', match: function (t) { return t === 'extend'; } },
     { id: 'end', label: '종료', match: function (t) { return t === 'end_button' || t === 'expired'; } },
-    { id: 'vanished', label: '비정상', match: function (t) { return t === 'vanished'; } }
+    { id: 'vanished', label: '비정상', match: function (t) { return t === 'vanished'; } },
+    { id: 'admin', label: '관리자', match: function (t) { return t === 'admin_end' || t === 'admin_edit'; } }
   ];
 
   function logDetail(l) {
@@ -1848,6 +1903,11 @@
         return formatDateTime(l.end) + ' 사용 시간이 끝나 자동 종료' + (l.detectedAt ? ' (처리 ' + formatDateTime(l.detectedAt) + ')' : '');
       case 'vanished':
         return formatDateTime(l.at) + ' 감지 · 종료 버튼/만료 기록 없이 사라짐 (예정 종료 ' + formatDateTime(l.scheduledEnd || l.end) + ') · 이전 버전 화면에서 종료했을 가능성 있음';
+      case 'admin_end':
+        return '관리자가 강제 종료 · 예정 종료 ' + formatDateTime(l.scheduledEnd || l.end) +
+          (l.remainingMin > 0 ? ' 보다 ' + l.remainingMin + '분 일찍 종료' : '');
+      case 'admin_edit':
+        return '관리자가 이름 변경: ' + (l.oldUser || '-') + ' → ' + (l.user || '-');
       default:
         return '';
     }
@@ -1979,10 +2039,10 @@
       var l = logsData[k];
       if (!l || !l.profile || !l.start) return;
       var s = get(l.profile, l.start, l.user);
-      if (l.user) s.user = l.user;
+      if (l.user && (l.at || 0) >= (s.userAt || 0)) { s.user = l.user; s.userAt = l.at || 0; }
       if (l.type === 'start' || l.type === 'extend' || l.type === 'expired') {
         s.end = Math.max(s.end, l.end || 0);
-      } else if (l.type === 'end_button') {
+      } else if (l.type === 'end_button' || l.type === 'admin_end') {
         s.closedAt = l.at;
       } else if (l.type === 'vanished') {
         s.vanishedAt = Math.min(l.scheduledEnd || l.end || l.at, l.at || Infinity);
@@ -2272,6 +2332,210 @@
     body.appendChild(el('p', 'stats-foot', statsDedup
       ? '접속자수는 기간 내 사이트에 들어온 서로 다른 기기 수이고, 이 기능이 추가된 이후부터 집계됩니다. 등록자수는 기간 내에 프로필을 등록한 사람(이름 기준)입니다.'
       : '중복 허용: 접속자수는 날짜별 접속 기기 수를 모두 더한 값(같은 기기도 다른 날이면 각각 집계, 같은 날은 1회)이고, 등록자수는 같은 사람이 여러 번 등록해도 등록한 횟수만큼 집계합니다. 일별 보기에서는 접속자수가 중복 제거와 같을 수 있습니다.'));
+
+    renderHeatmap(body);
+  }
+
+  /* ===== v1.2.0 추가 기능 ===== */
+
+  /* 즐겨찾기 / 검색 */
+  var FAV_KEY = 'ott-board-favs';
+  function getFavs() {
+    try { var a = JSON.parse(sget(FAV_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+  }
+  function isFav(p) { return getFavs().includes(p); }
+  function toggleFav(p) {
+    var f = getFavs(), i = f.indexOf(p);
+    if (i >= 0) f.splice(i, 1); else f.push(p);
+    sset(FAV_KEY, JSON.stringify(f));
+  }
+  function searchQ() {
+    var i = document.getElementById('searchInput');
+    return i ? i.value.trim().toLowerCase() : '';
+  }
+
+  /* 내 사용 중 배너 */
+  function renderMyBanner() {
+    var box = document.getElementById('myBanner');
+    if (!box) return;
+    var me = getDeviceSessionId();
+    var mine = Object.keys(state).filter(function (k) { var u = usage(k); return u && u.deviceId === me; });
+    if (!mine.length) {
+      box.className = 'my-banner';
+      box.textContent = '';
+      box.removeAttribute('data-p');
+      return;
+    }
+    var p = mine[0], u = usage(p);
+    box.className = 'my-banner show';
+    box.setAttribute('data-p', p);
+    box.textContent = getProfileOtt(p) + ' · ' + p + ' 사용 중 (' + remain(u.end) + ' 남음)';
+  }
+
+  /* 공지사항 배너 */
+  var NOTICE_KEY = 'ott-board-notice-closed';
+  function renderNotice() {
+    var box = document.getElementById('notice');
+    if (!box) return;
+    box.textContent = '';
+    if (!announcement || !announcement.text || sget(NOTICE_KEY) === String(announcement.at)) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    box.appendChild(el('span', null, '📢'));
+    box.appendChild(el('span', 'notice-text', announcement.text));
+    var x = el('button', 'notice-x', '✕');
+    x.type = 'button';
+    x.setAttribute('aria-label', '공지 닫기');
+    x.addEventListener('click', function () { sset(NOTICE_KEY, String(announcement.at)); renderNotice(); });
+    box.appendChild(x);
+  }
+
+  /* 관리자: 공지 작성 + 사용 중 프로필 관리 */
+  function buildAdminTools() {
+    var wrap = el('div');
+    wrap.appendChild(el('h3', 'stats-section-title', '공지사항'));
+    wrap.appendChild(el('p', 'stats-section-sub', '게시하면 모든 사용자 화면 상단에 표시됩니다.'));
+    var ta = document.createElement('textarea');
+    ta.maxLength = 200;
+    ta.placeholder = '예) 왓챠 비밀번호가 변경되었습니다.';
+    ta.value = (announcement && announcement.text) || '';
+    wrap.appendChild(ta);
+
+    var nacts = el('div', 'admin-row-actions');
+    var off = el('button', 'btn', '내리기'); off.type = 'button';
+    var on = el('button', 'btn primary', '게시'); on.type = 'button';
+    off.addEventListener('click', function () {
+      remove(ref(db, 'announcement')).then(function () { ta.value = ''; alert('공지를 내렸습니다.'); })
+        .catch(function (err) { alert('오류: ' + err.message); });
+    });
+    on.addEventListener('click', function () {
+      var text = ta.value.trim();
+      if (!text) { alert('공지 내용을 입력해주세요.'); return; }
+      set(ref(db, 'announcement'), { text: text, at: now() }).then(function () { alert('공지를 게시했습니다.'); })
+        .catch(function (err) { alert('오류: ' + err.message); });
+    });
+    nacts.appendChild(off); nacts.appendChild(on);
+    wrap.appendChild(nacts);
+
+    wrap.appendChild(el('h3', 'stats-section-title admin-sec', '사용 중 프로필 관리'));
+    var busy = ALL_PROFILES.filter(function (p) { return usage(p); });
+    if (!busy.length) {
+      wrap.appendChild(el('p', 'stats-section-sub', '현재 사용 중인 프로필이 없습니다.'));
+    } else {
+      wrap.appendChild(el('p', 'stats-section-sub', '이름 수정 또는 강제 종료 (사용 로그에 기록됩니다).'));
+      busy.forEach(function (p) {
+        var u = usage(p);
+        var box = el('div', 'complaint-item');
+        var top = el('div');
+        top.appendChild(el('span', 'c-user', p + ' (' + getProfileOtt(p) + ') · ' + u.user));
+        top.appendChild(el('span', 'c-date', clock(u.end) + ' 종료 예정'));
+        box.appendChild(top);
+        var acts = el('div', 'admin-row-actions');
+        var rn = el('button', 'btn', '이름 수정'); rn.type = 'button';
+        rn.addEventListener('click', function () {
+          var n = prompt('새 이름을 입력하세요', u.user);
+          if (n === null) return;
+          n = n.trim();
+          if (!n || n === u.user) return;
+          adminRename(p, n);
+        });
+        var fe = el('button', 'btn danger', '강제 종료'); fe.type = 'button';
+        fe.addEventListener('click', function () {
+          if (confirm(p + ' (' + u.user + ') 사용을 강제로 종료할까요?')) adminEnd(p);
+        });
+        acts.appendChild(rn); acts.appendChild(fe);
+        box.appendChild(acts);
+        wrap.appendChild(box);
+      });
+    }
+    return wrap;
+  }
+
+  function adminRename(p, name) {
+    var u = state[p];
+    if (!u) return;
+    runTransaction(ref(db, 'ott_state/' + p), function (cur) {
+      if (cur && cur.start === u.start && cur.end > now()) return Object.assign({}, cur, { user: name });
+      return undefined;
+    }).then(function (res) {
+      if (res.committed) return writeLog('admin_edit', p, res.snapshot.val(), { at: now(), oldUser: u.user });
+    }).then(function () {
+      openComplaintsListSheet();
+    }).catch(function (err) {
+      alert('수정 중 오류가 발생했습니다: ' + err.message);
+    });
+  }
+
+  function adminEnd(p) {
+    var u = state[p];
+    if (!u) return;
+    var t = now();
+    // 일반 종료와 동일하게 로그를 먼저 저장한 뒤 세션을 삭제
+    writeLog('admin_end', p, u, {
+      at: t,
+      scheduledEnd: u.end,
+      remainingMin: Math.max(0, Math.round((u.end - t) / 60000))
+    }).then(function () {
+      return runTransaction(ref(db, 'ott_state/' + p), function (cur) {
+        if (cur && cur.start === u.start) return null;
+        return undefined;
+      });
+    }).then(function () {
+      openComplaintsListSheet();
+    }).catch(function (err) {
+      alert('강제 종료 중 오류가 발생했습니다: ' + err.message);
+    });
+  }
+
+  /* 시간대별 히트맵: 최근 4주, 요일 x 시간 누적 사용 시간 */
+  function renderHeatmap(body) {
+    body.appendChild(el('div', 'stats-divider'));
+    body.appendChild(el('h3', 'stats-section-title', '시간대별 사용 히트맵'));
+    body.appendChild(el('p', 'stats-section-sub', '최근 4주간 요일·시간대별 누적 사용 시간 (진할수록 사용이 몰림)'));
+
+    var DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+    var ORDER = [1, 2, 3, 4, 5, 6, 0];
+    var cells = [];
+    for (var d = 0; d < 7; d++) { cells.push([]); for (var h = 0; h < 24; h++) cells[d].push(0); }
+
+    var t = now(), cutoff = t - 28 * 86400000;
+    buildSessions().forEach(function (s) {
+      var a = Math.max(s.start, cutoff), b = Math.min(s.finalEnd, t);
+      while (a < b) {
+        var dt = new Date(a);
+        var nextHour = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), dt.getHours() + 1).getTime();
+        var seg = Math.min(b, nextHour) - a;
+        if (seg <= 0) break;
+        cells[dt.getDay()][dt.getHours()] += seg;
+        a += seg;
+      }
+    });
+
+    var max = 0, peakD = 0, peakH = 0;
+    for (var d2 = 0; d2 < 7; d2++) for (var h2 = 0; h2 < 24; h2++) {
+      if (cells[d2][h2] > max) { max = cells[d2][h2]; peakD = d2; peakH = h2; }
+    }
+
+    var grid = el('div', 'heat');
+    grid.appendChild(el('span', 'heat-h', ''));
+    for (var hh = 0; hh < 24; hh++) grid.appendChild(el('span', 'heat-h', hh % 6 === 0 ? String(hh) : ''));
+    ORDER.forEach(function (di) {
+      grid.appendChild(el('span', 'heat-d', DAYS[di]));
+      for (var h3 = 0; h3 < 24; h3++) {
+        var ms = cells[di][h3];
+        var c = el('div', 'heat-cell' + (ms > 0 ? ' on' : ''));
+        if (ms > 0) c.style.opacity = String(0.2 + 0.8 * (ms / max));
+        c.title = DAYS[di] + '요일 ' + h3 + '시 · ' + fmtHours(ms);
+        grid.appendChild(c);
+      }
+    });
+    body.appendChild(grid);
+
+    body.appendChild(el('p', 'stats-foot', max > 0
+      ? '가장 붐비는 시간대: ' + DAYS[peakD] + '요일 ' + peakH + '시 (4주 누적 ' + fmtHours(max) + ')'
+      : '아직 집계할 사용 기록이 없습니다.'));
   }
 
   document.getElementById('overlay').addEventListener('click', function (e) {
@@ -2281,6 +2545,11 @@
 
   renderTabs();
   recordVisit();
+  document.getElementById('searchInput').addEventListener('input', render);
+  document.getElementById('myBanner').addEventListener('click', function () {
+    var p = this.getAttribute('data-p');
+    if (p) openSheet(p);
+  });
   setInterval(tick, 1000);
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden) { purge(); recordVisit(); }
