@@ -944,6 +944,10 @@
   .heat-d{font-size:.72rem;font-weight:600;color:var(--muted)}
   .heat-cell{aspect-ratio:1;border-radius:3px;background:var(--surface-sub)}
   .heat-cell.on{background:var(--info)}
+
+  /* 사용 로그 날짜 이동 */
+  .log-date-nav{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px}
+  .log-date-nav .stats-date{margin:0;min-width:150px}
 </style>
 </head>
 <body>
@@ -967,7 +971,7 @@
     <button type="button" class="filter-btn" data-status="busy" aria-checked="false">사용 중</button>
   </div>
 
-  <div class="search-wrap"><input type="text" id="searchInput" placeholder="프로필 · 서비스 · 사용자 검색" autocomplete="off"></div>
+  <div class="search-wrap"><input type="text" id="searchInput" placeholder="프로필 · 서비스 검색" autocomplete="off"></div>
   <div class="summary" id="summary"></div>
   <div class="grid" id="grid"></div>
   <p class="note">실시간 데이터베이스와 연결되어 모든 사용자에게 공통으로 공유됩니다.</p>
@@ -1278,6 +1282,7 @@
   let logViewOpen = false;
   let statsOpen = false;
   let logFilter = 'all';
+  let logDate = new Date();   // 사용 로그에서 보고 있는 날짜 (열 때마다 오늘로 초기화)
   onValue(query(ref(db, 'usage_logs'), limitToLast(2000)), (snapshot) => {
     logsData = snapshot.val() || {};
     logsLoaded = true;
@@ -1418,10 +1423,10 @@
     purge();
     const activeGroup = OTT_GROUPS.find(g => g.id === currentCategory) || OTT_GROUPS[0];
     var q = searchQ();
+    /* 검색은 프로필 이름과 서비스 이름만 대상으로 함 (사용자 이름은 검색하지 않음) */
     let targetProfiles = (q ? ALL_PROFILES : activeGroup.profiles).filter(function (p) {
       if (!q) return true;
-      var uu = usage(p);
-      return p.toLowerCase().includes(q) || getProfileOtt(p).toLowerCase().includes(q) || !!(uu && uu.user.toLowerCase().includes(q));
+      return p.toLowerCase().includes(q) || getProfileOtt(p).toLowerCase().includes(q);
     });
     var favs = getFavs();
     targetProfiles = targetProfiles.slice().sort(function (a, b) {
@@ -1927,9 +1932,29 @@
     }
   }
 
+  /* ----- 사용 로그: 날짜별 보기 ----- */
+  function logDateTitle() {
+    var days = ['일', '월', '화', '수', '목', '금', '토'];
+    return logDate.getFullYear() + '년 ' + (logDate.getMonth() + 1) + '월 ' + logDate.getDate() + '일 (' + days[logDate.getDay()] + ')';
+  }
+
+  function updateLogNav() {
+    var t = document.getElementById('logDateTitle');
+    if (t) t.textContent = logDateTitle();
+    var n = document.getElementById('logNext');
+    if (n) n.disabled = dateKey(logDate) >= dateKey(new Date());   // 오늘 이후로는 이동 불가
+  }
+
+  function shiftLogDate(dir) {
+    logDate = new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate() + dir);
+    updateLogNav();
+    renderLogList();
+  }
+
   function openLogSheet() {
     logViewOpen = true;
     statsOpen = false;
+    logDate = new Date();   // 열 때마다 오늘부터 시작
     var sheet = document.getElementById('sheet');
     sheet.className = 'sheet wide';
     sheet.textContent = '';
@@ -1937,7 +1962,33 @@
     var title = el('h2', null, '사용 로그');
     title.id = 'dlgTitle';
     sheet.appendChild(title);
-    sheet.appendChild(el('p', 'hint', '등록 · 연장 · 종료(버튼/만료) · 비정상 삭제 기록 (최근 500건)'));
+    sheet.appendChild(el('p', 'hint', '등록 · 연장 · 종료(버튼/만료) · 비정상 삭제 기록 (날짜별)'));
+
+    /* 날짜 이동: ‹  날짜  ›  [오늘] */
+    var nav = el('div', 'log-date-nav');
+    var prev = el('button', 'nav-btn', '‹');
+    prev.type = 'button';
+    prev.setAttribute('aria-label', '이전 날');
+    prev.addEventListener('click', function () { shiftLogDate(-1); });
+    var dateTitle = el('div', 'stats-date');
+    dateTitle.id = 'logDateTitle';
+    var next = el('button', 'nav-btn', '›');
+    next.type = 'button';
+    next.id = 'logNext';
+    next.setAttribute('aria-label', '다음 날');
+    next.addEventListener('click', function () { shiftLogDate(1); });
+    var todayBtn = el('button', 'today-btn', '오늘');
+    todayBtn.type = 'button';
+    todayBtn.addEventListener('click', function () {
+      logDate = new Date();
+      updateLogNav();
+      renderLogList();
+    });
+    nav.appendChild(prev);
+    nav.appendChild(dateTitle);
+    nav.appendChild(next);
+    nav.appendChild(todayBtn);
+    sheet.appendChild(nav);
 
     var filters = el('div', 'log-filters');
     filters.id = 'logFilters';
@@ -1966,6 +2017,7 @@
     acts.appendChild(close);
     sheet.appendChild(acts);
 
+    updateLogNav();
     renderLogList();
   }
 
@@ -1974,14 +2026,17 @@
     if (!list) return;
     list.textContent = '';
 
+    var y = logDate.getFullYear(), m = logDate.getMonth(), d = logDate.getDate();
+    var dayStart = new Date(y, m, d).getTime();
+    var dayEnd = new Date(y, m, d + 1).getTime();
+
     var f = LOG_FILTERS.find(function (x) { return x.id === logFilter; }) || LOG_FILTERS[0];
     var rows = Object.keys(logsData).map(function (k) { return logsData[k]; })
-      .filter(function (l) { return l && f.match(l.type); })
-      .sort(function (a, b) { return (b.at || 0) - (a.at || 0); })
-      .slice(0, 500);
+      .filter(function (l) { return l && f.match(l.type) && (l.at || 0) >= dayStart && (l.at || 0) < dayEnd; })
+      .sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
 
     if (rows.length === 0) {
-      list.appendChild(el('p', 'log-empty', '기록이 없습니다.'));
+      list.appendChild(el('p', 'log-empty', '이 날의 기록이 없습니다.'));
       return;
     }
 
