@@ -928,6 +928,12 @@
   .card-top .fav{margin-left:auto;font-size:1.05rem;line-height:1;color:var(--subtle);cursor:pointer;padding:2px}
   .card-top .ott-tag + .fav{margin-left:0}
   .fav.on{color:var(--warn)}
+  .fav svg{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+  .fav.on svg{fill:currentColor}
+  .fav.on svg circle{fill:var(--surface);stroke:none}
+  .card.mine{grid-column:span 2;border-color:var(--free);padding:20px}
+  .card.mine .name{font-size:1.3rem}
+  @media (max-width:340px){.card.mine{grid-column:span 1}}
   .log-type.t-admin_end{background:var(--busy-bg);color:var(--busy)}
   .log-type.t-admin_edit{background:var(--info-bg);color:var(--info)}
   .admin-sec{margin:22px 0 4px}
@@ -943,7 +949,6 @@
 <body>
 <main>
   <div class="notice" id="notice" hidden></div>
-  <button type="button" class="my-banner" id="myBanner"></button>
   <div class="header-area">
     <h1>세인영 OTT 공유 현황</h1>
     <button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="테마 변경">
@@ -1429,6 +1434,13 @@
       targetProfiles = targetProfiles.filter(p => usage(p));
     }
 
+    var mineP = null;
+    if (!q) {
+      var meId = getDeviceSessionId();
+      mineP = ALL_PROFILES.find(function (k) { var mu = usage(k); return mu && mu.deviceId === meId; }) || null;
+      if (mineP) targetProfiles = targetProfiles.filter(function (k) { return k !== mineP; });
+    }
+
     var freeList = activeGroup.profiles.filter(function (p) { return !usage(p); });
     var sum = document.getElementById('summary');
     sum.textContent = '';
@@ -1448,7 +1460,8 @@
     var grid = document.getElementById('grid');
     grid.textContent = '';
     
-    if (targetProfiles.length === 0) {
+    if (mineP) grid.appendChild(buildMineCard(mineP));
+    if (targetProfiles.length === 0 && !mineP) {
       var emptyMsg = el('p', 'sub', '해당 조건에 맞는 프로필이 없습니다.');
       emptyMsg.style.gridColumn = '1 / -1';
       emptyMsg.style.textAlign = 'center';
@@ -1466,7 +1479,8 @@
       if (currentCategory === 'all' || q) {
         cardTop.appendChild(el('span', 'ott-tag', getProfileOtt(p)));
       }
-      var star = el('span', 'fav' + (isFav(p) ? ' on' : ''), isFav(p) ? '★' : '☆');
+      var star = el('span', 'fav' + (isFav(p) ? ' on' : ''));
+      star.innerHTML = ROCKET_SVG;
       star.setAttribute('role', 'button');
       star.setAttribute('aria-label', '즐겨찾기');
       star.addEventListener('click', function (e) { e.stopPropagation(); toggleFav(p); render(); });
@@ -2339,6 +2353,7 @@
   /* ===== v1.2.0 추가 기능 ===== */
 
   /* 즐겨찾기 / 검색 */
+  var ROCKET_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3h11a1 1 0 0 1 1 1v17l-6.5-4.6L5.5 21V4a1 1 0 0 1 1-1z"/></svg>';
   var FAV_KEY = 'ott-board-favs';
   function getFavs() {
     try { var a = JSON.parse(sget(FAV_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
@@ -2354,7 +2369,28 @@
     return i ? i.value.trim().toLowerCase() : '';
   }
 
-  /* 내 사용 중 배너 */
+  /* 내 사용 중 카드 (그리드 맨 위, 2칸 크기) */
+  function buildMineCard(p) {
+    var u = usage(p);
+    var card = el('button', 'card busy mine');
+    card.setAttribute('data-p', p);
+    var top = el('div', 'card-top');
+    top.appendChild(el('span', 'name', p));
+    top.appendChild(el('span', 'ott-tag', getProfileOtt(p)));
+    card.appendChild(top);
+    card.appendChild(el('span', 'badge', '내가 사용 중'));
+    card.appendChild(el('span', 'who', u.user));
+    var meta = el('span', 'meta live-meta', '');
+    card.appendChild(meta);
+    var bar = el('span', 'bar live-bar'); var fill = document.createElement('i');
+    bar.appendChild(fill); card.appendChild(bar);
+    card.appendChild(el('span', 'meta', '눌러서 연장 · 종료'));
+    paint(u, meta, bar, fill);
+    card.addEventListener('click', function () { openSheet(p); });
+    return card;
+  }
+
+  /* (이전 배너 - 현재는 사용 안 함) */
   function renderMyBanner() {
     var box = document.getElementById('myBanner');
     if (!box) return;
@@ -2546,10 +2582,6 @@
   renderTabs();
   recordVisit();
   document.getElementById('searchInput').addEventListener('input', render);
-  document.getElementById('myBanner').addEventListener('click', function () {
-    var p = this.getAttribute('data-p');
-    if (p) openSheet(p);
-  });
   setInterval(tick, 1000);
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden) { purge(); recordVisit(); }
