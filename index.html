@@ -931,9 +931,6 @@
   .fav svg{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
   .fav.on svg{fill:currentColor}
   .fav.on svg circle{fill:var(--surface);stroke:none}
-  .card.mine{grid-column:span 2;border-color:var(--free);padding:20px}
-  .card.mine .name{font-size:1.3rem}
-  @media (max-width:340px){.card.mine{grid-column:span 1}}
   .log-type.t-admin_end{background:var(--busy-bg);color:var(--busy)}
   .log-type.t-admin_edit{background:var(--info-bg);color:var(--info)}
   .admin-sec{margin:22px 0 4px}
@@ -948,6 +945,54 @@
   /* 사용 로그 날짜 이동 */
   .log-date-nav{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px}
   .log-date-nav .stats-date{margin:0;min-width:150px}
+
+  /* ===== v1.3.0 대시보드 스타일 ===== */
+  .tab-count{font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--surface-sub);color:var(--muted)}
+  .tab[aria-selected="true"] .tab-count{background:rgba(128,128,128,.3);color:inherit}
+  #filterBar{display:flex;width:100%}
+  #filterBar .filter-btn{flex:1}
+  .search-box{position:relative}
+  .search-box input{padding-left:40px;padding-right:40px}
+  .search-ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted);pointer-events:none}
+  .search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:none;color:var(--subtle);font-size:1.05rem;cursor:pointer;display:none;padding:4px}
+  .search-clear.show{display:block}
+
+  /* 실시간 여유 회선 카드 */
+  .overview{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+  .ov-ic{width:44px;height:44px;border-radius:12px;background:var(--free-bg);color:var(--free);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ov-ic svg{width:22px;height:22px}
+  .ov-body{flex:1;min-width:0}
+  .ov-label{font-size:.74rem;color:var(--muted);font-weight:500}
+  .ov-main{font-size:1rem;font-weight:700}
+  .ov-main b{color:var(--free)}
+  .ov-next{font-size:.76rem;color:var(--muted);margin-top:2px}
+
+  /* 내가 사용 중 카드 */
+  .mine-card{display:none;background:linear-gradient(180deg,var(--info-bg),var(--surface));border:1px solid var(--info);border-radius:var(--radius-lg);padding:18px;margin-bottom:16px;box-shadow:var(--shadow-md)}
+  .mine-card.show{display:block}
+  .mc-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+  .mc-badge{display:inline-flex;align-items:center;gap:6px;background:var(--info);color:#fff;font-size:.76rem;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap}
+  .mc-badge svg{width:13px;height:13px}
+  .mc-end{font-size:.74rem;color:var(--muted);white-space:nowrap}
+  .mc-mid{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+  .mc-name{font-size:1.4rem;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:6px}
+  .mc-name svg{width:18px;height:18px;color:var(--warn);flex-shrink:0}
+  .mc-remain{text-align:right;white-space:nowrap}
+  .mc-remain strong{display:block;font-size:1.5rem;color:var(--info);line-height:1.1;font-weight:700}
+  .mc-remain span{font-size:.72rem;color:var(--muted)}
+  .mc-legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.7rem;color:var(--muted);margin:16px 0 8px}
+  .mc-legend span{display:inline-flex;align-items:center;gap:4px}
+  .mc-legend i{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .mc-stage{font-weight:700}
+  .d-ok{background:var(--free)}.d-mid{background:var(--warn)}.d-low{background:var(--busy)}
+  .z-ok .mc-stage{color:var(--free)}.z-mid .mc-stage{color:var(--warn)}.z-low .mc-stage{color:var(--busy)}
+  .zbar{position:relative;height:8px;border-radius:999px;overflow:hidden;background:linear-gradient(90deg,var(--free) 0 60%,var(--warn) 60% 85%,var(--busy) 85% 100%)}
+  .zbar-cover{position:absolute;top:0;right:0;bottom:0;background:var(--surface-sub);transition:width 1s linear}
+  .mc-foot{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;color:var(--muted);margin-top:6px}
+  .mc-prog{font-weight:700}
+  .z-ok .mc-prog{color:var(--free)}.z-mid .mc-prog{color:var(--warn)}.z-low .mc-prog{color:var(--busy)}
+  .mc-actions{display:flex;gap:8px;margin-top:14px}
+  .mc-actions .btn{flex:1}
 </style>
 </head>
 <body>
@@ -971,8 +1016,13 @@
     <button type="button" class="filter-btn" data-status="busy" aria-checked="false">사용 중</button>
   </div>
 
-  <div class="search-wrap"><input type="text" id="searchInput" placeholder="프로필 · 서비스 검색" autocomplete="off"></div>
-  <div class="summary" id="summary"></div>
+  <div class="search-wrap search-box">
+    <svg class="search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input type="text" id="searchInput" placeholder="프로필 · 서비스 검색 (예: 크라피카, 넷플)" autocomplete="off">
+    <button type="button" class="search-clear" id="searchClear" aria-label="검색어 지우기">✕</button>
+  </div>
+  <div class="overview" id="overview"></div>
+  <div class="mine-card" id="mineCard"></div>
   <div class="grid" id="grid"></div>
   <p class="note">실시간 데이터베이스와 연결되어 모든 사용자에게 공통으로 공유됩니다.</p>
 
@@ -1024,7 +1074,7 @@
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.2.1',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.3.0',   // 하단에 표시되는 버전
     ADMIN_KEY: 'saintyoung26',      // 불편사항 조회 비밀키
     LOG_PIN: '1357',        // 사용 로그 핀코드
     STATS_PIN: '2468'       // 이용 현황 비밀번호
@@ -1384,6 +1434,7 @@
       paint(u, card.querySelector('.live-meta'), card.querySelector('.live-bar'), card.querySelector('.live-bar > i'));
     });
     if (expired) purge();
+    paintMine();
     renderMyBanner();
   }
 
@@ -1408,6 +1459,11 @@
       iconSpan.innerHTML = g.logo;
       btn.appendChild(iconSpan);
       btn.appendChild(document.createTextNode(g.name));
+
+      /* 탭 옆에 '사용 가능' 프로필 개수 표시 (숫자는 renderOverview에서 실시간 갱신) */
+      const cnt = el('span', 'tab-count', String(g.profiles.filter(function (p) { return !usage(p); }).length));
+      cnt.setAttribute('data-g', g.id);
+      btn.appendChild(cnt);
 
       btn.addEventListener('click', () => {
         currentCategory = g.id;
@@ -1439,33 +1495,16 @@
       targetProfiles = targetProfiles.filter(p => usage(p));
     }
 
-    var mineP = null;
-    if (!q) {
-      var meId = getDeviceSessionId();
-      mineP = ALL_PROFILES.find(function (k) { var mu = usage(k); return mu && mu.deviceId === meId; }) || null;
-      if (mineP) targetProfiles = targetProfiles.filter(function (k) { return k !== mineP; });
-    }
-
-    var freeList = activeGroup.profiles.filter(function (p) { return !usage(p); });
-    var sum = document.getElementById('summary');
-    sum.textContent = '';
-    if (freeList.length) {
-      sum.appendChild(document.createTextNode(`사용 가능 프로필 ${freeList.length}개: `));
-      sum.appendChild(el('b', null, freeList.join(', ')));
-    } else {
-      var soonest = Math.min.apply(null, activeGroup.profiles.map(function (p) { return usage(p) ? usage(p).end : Infinity; }));
-      if (soonest !== Infinity) {
-        sum.appendChild(document.createTextNode(`사용 가능한 프로필이 없습니다. 가장 빠른 시각: `));
-        sum.appendChild(el('b', null, clock(soonest)));
-      } else {
-        sum.appendChild(document.createTextNode(`등록된 프로필이 없습니다.`));
-      }
-    }
+    /* 내가 사용 중인 프로필은 위쪽 큰 카드로 따로 보여주고, 아래 목록에서는 뺌 */
+    var meId = getDeviceSessionId();
+    var mineP = ALL_PROFILES.find(function (k) { var mu = usage(k); return mu && mu.deviceId === meId; }) || null;
+    if (mineP) targetProfiles = targetProfiles.filter(function (k) { return k !== mineP; });
+    renderMine(mineP);
+    renderOverview(activeGroup);
 
     var grid = document.getElementById('grid');
     grid.textContent = '';
-    
-    if (mineP) grid.appendChild(buildMineCard(mineP));
+
     if (targetProfiles.length === 0 && !mineP) {
       var emptyMsg = el('p', 'sub', '해당 조건에 맞는 프로필이 없습니다.');
       emptyMsg.style.gridColumn = '1 / -1';
@@ -1510,7 +1549,8 @@
     });
   }
 
-  function extendUsage(p, minutes) {
+  /* quiet=true 이면 연장 후 팝업을 열지 않음 (내 사용 카드의 버튼용) */
+  function extendUsage(p, minutes, quiet) {
     var me = getDeviceSessionId();
     var u = state[p];
     if (!u) return;
@@ -1523,7 +1563,7 @@
       if (res.committed) {
         writeLog('extend', p, res.snapshot.val(), { addedMin: minutes });
       }
-      openSheet(p);
+      if (!quiet) openSheet(p);
     }).catch(function (err) {
       alert('연장 중 오류가 발생했습니다: ' + err.message);
     });
@@ -1575,6 +1615,9 @@
     acts.appendChild(back);
     acts.appendChild(yes);
     sheet.appendChild(acts);
+
+    var ov = document.getElementById('overlay');
+    ov.classList.add('open'); ov.setAttribute('aria-hidden', 'false');
   }
 
   function openSheet(p) {
@@ -2424,27 +2467,6 @@
     return i ? i.value.trim().toLowerCase() : '';
   }
 
-  /* 내 사용 중 카드 (그리드 맨 위, 2칸 크기) */
-  function buildMineCard(p) {
-    var u = usage(p);
-    var card = el('button', 'card busy mine');
-    card.setAttribute('data-p', p);
-    var top = el('div', 'card-top');
-    top.appendChild(el('span', 'name', p));
-    top.appendChild(el('span', 'ott-tag', getProfileOtt(p)));
-    card.appendChild(top);
-    card.appendChild(el('span', 'badge', '내가 사용 중'));
-    card.appendChild(el('span', 'who', u.user));
-    var meta = el('span', 'meta live-meta', '');
-    card.appendChild(meta);
-    var bar = el('span', 'bar live-bar'); var fill = document.createElement('i');
-    bar.appendChild(fill); card.appendChild(bar);
-    card.appendChild(el('span', 'meta', '눌러서 연장 · 종료'));
-    paint(u, meta, bar, fill);
-    card.addEventListener('click', function () { openSheet(p); });
-    return card;
-  }
-
   /* (이전 배너 - 현재는 사용 안 함) */
   function renderMyBanner() {
     var box = document.getElementById('myBanner');
@@ -2628,6 +2650,146 @@
       ? '가장 붐비는 시간대: ' + DAYS[peakD] + '요일 ' + peakH + '시 (4주 누적 ' + fmtHours(max) + ')'
       : '아직 집계할 사용 기록이 없습니다.'));
   }
+
+  /* ===== v1.3.0: 대시보드 카드 (실시간 여유 회선 / 내가 사용 중) ===== */
+  var mineProfile = null;
+  var BOLT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>';
+  var USER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>';
+  var CLAP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 9h16v11H4z"/><path d="M4 9l2-5h3l-2 5M10 9l2-5h3l-2 5M16 9l2-5h2v5"/></svg>';
+  var WARN_SVG = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" style="vertical-align:-2px"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>';
+
+  function byId(id) { return document.getElementById(id); }
+
+  /* 탭 숫자 · 필터 숫자 · 실시간 여유 회선 카드 (선택한 탭 기준) */
+  function renderOverview(g) {
+    var list = g.profiles;
+    var free = list.filter(function (p) { return !usage(p); });
+    var counts = { all: list.length, free: free.length, busy: list.length - free.length };
+    var labels = { all: '전체', free: '사용 가능', busy: '사용 중' };
+    document.querySelectorAll('#filterBar .filter-btn').forEach(function (b) {
+      var k = b.getAttribute('data-status');
+      b.textContent = labels[k] + ' (' + counts[k] + ')';
+    });
+    OTT_GROUPS.forEach(function (gr) {
+      var s = document.querySelector('.tab-count[data-g="' + gr.id + '"]');
+      if (s) s.textContent = String(gr.profiles.filter(function (p) { return !usage(p); }).length);
+    });
+
+    var box = byId('overview');
+    box.textContent = '';
+    var ic = el('div', 'ov-ic'); ic.innerHTML = BOLT_SVG;
+    var body = el('div', 'ov-body');
+    body.appendChild(el('div', 'ov-label', '실시간 여유 회선'));
+    var main = el('div', 'ov-main');
+    main.appendChild(document.createTextNode('총 ' + list.length + '개 중 '));
+    main.appendChild(el('b', null, free.length + '개 사용 가능'));
+    body.appendChild(main);
+    if (!free.length) {
+      var soon = Math.min.apply(null, list.map(function (p) { return usage(p) ? usage(p).end : Infinity; }));
+      if (soon !== Infinity) body.appendChild(el('div', 'ov-next', '가장 빠른 반납 예정 ' + clock(soon)));
+    }
+    box.appendChild(ic);
+    box.appendChild(body);
+  }
+
+  /* 내가 사용 중인 프로필 카드 */
+  function renderMine(p) {
+    var box = byId('mineCard');
+    mineProfile = p;
+    box.textContent = '';
+    var u = p ? usage(p) : null;
+    if (!u) { box.className = 'mine-card'; mineProfile = null; return; }
+    box.className = 'mine-card show';
+
+    var top = el('div', 'mc-top');
+    var badge = el('span', 'mc-badge');
+    badge.innerHTML = USER_SVG;
+    badge.appendChild(document.createTextNode('내가 사용 중'));
+    top.appendChild(badge);
+    top.appendChild(el('span', 'mc-end', '종료 예정 ' + clock(u.end)));
+    box.appendChild(top);
+
+    var mid = el('div', 'mc-mid');
+    var nm = el('div', 'mc-name');
+    nm.appendChild(document.createTextNode(p + ' (' + u.user + ')'));
+    var ci = el('span'); ci.innerHTML = CLAP_SVG;
+    nm.appendChild(ci.firstChild);
+    mid.appendChild(nm);
+    var right = el('div', 'mc-remain');
+    var rs = el('strong', null, ''); rs.id = 'mcRemain';
+    right.appendChild(rs);
+    right.appendChild(el('span', null, '총 ' + Math.round((u.end - u.start) / 60000) + '분 예약'));
+    mid.appendChild(right);
+    box.appendChild(mid);
+
+    var lg = el('div', 'mc-legend');
+    var stage = el('span', 'mc-stage');
+    var dot = el('i', 'd-ok'); dot.id = 'mcDot';
+    stage.appendChild(dot);
+    var stTxt = el('span', null, ''); stTxt.id = 'mcStage';
+    stage.appendChild(stTxt);
+    lg.appendChild(stage);
+    [['d-ok', '여유 >40%'], ['d-mid', '주의 16~40%'], ['d-low', '임박 ≤15%']].forEach(function (z) {
+      var s = el('span');
+      s.appendChild(el('i', z[0]));
+      s.appendChild(document.createTextNode(z[1]));
+      lg.appendChild(s);
+    });
+    box.appendChild(lg);
+
+    var bar = el('div', 'zbar');
+    var cover = el('div', 'zbar-cover'); cover.id = 'mcCover';
+    bar.appendChild(cover);
+    box.appendChild(bar);
+
+    var foot = el('div', 'mc-foot');
+    foot.appendChild(el('span', null, '시작 ' + clock(u.start)));
+    var prog = el('span', 'mc-prog'); prog.id = 'mcProg';
+    foot.appendChild(prog);
+    foot.appendChild(el('span', null, '종료 ' + clock(u.end)));
+    box.appendChild(foot);
+
+    var acts = el('div', 'mc-actions');
+    var ext = el('button', 'btn extend', '+30분 연장'); ext.type = 'button';
+    ext.addEventListener('click', function () { extendUsage(p, 30, true); });
+    var end = el('button', 'btn danger', '사용 종료 반납'); end.type = 'button';
+    end.addEventListener('click', function () { openEndConfirm(p); });
+    acts.appendChild(ext);
+    acts.appendChild(end);
+    box.appendChild(acts);
+
+    paintMine();
+  }
+
+  /* 1초마다 남은 시간 · 단계 · 진행바 갱신 */
+  function paintMine() {
+    if (!mineProfile) return;
+    var u = usage(mineProfile);
+    if (!u) { purge(); return; }
+    var box = byId('mineCard');
+    var leftPct = Math.max(0, Math.min(100, ((u.end - now()) / (u.end - u.start)) * 100));
+    var zone = leftPct <= 15 ? 'low' : (leftPct > 40 ? 'ok' : 'mid');
+    var names = { ok: '여유', mid: '주의', low: '임박' };
+    box.classList.remove('z-ok', 'z-mid', 'z-low');
+    box.classList.add('z-' + zone);
+    byId('mcRemain').textContent = remain(u.end) + ' 남음';
+    byId('mcStage').textContent = names[zone] + ' 단계 (잔여 ' + Math.round(leftPct) + '%)';
+    byId('mcDot').className = 'd-' + zone;
+    byId('mcCover').style.width = leftPct + '%';
+    byId('mcProg').innerHTML = (zone === 'ok' ? '' : WARN_SVG + ' ') + '진행률 ' + Math.round(100 - leftPct) + '% (' + names[zone] + ')';
+  }
+
+  /* 검색창 지우기(✕) 버튼 */
+  (function () {
+    var si = byId('searchInput'), sc = byId('searchClear');
+    si.addEventListener('input', function () { sc.classList.toggle('show', !!si.value); });
+    sc.addEventListener('click', function () {
+      si.value = '';
+      sc.classList.remove('show');
+      render();
+      si.focus();
+    });
+  })();
 
   document.getElementById('overlay').addEventListener('click', function (e) {
     if (e.target === this) closeSheet();
