@@ -2712,8 +2712,6 @@
     var mid = el('div', 'mc-mid');
     var nm = el('div', 'mc-name');
     nm.appendChild(document.createTextNode(p + ' (' + u.user + ')'));
-    var ci = el('span'); ci.innerHTML = CLAP_SVG;
-    nm.appendChild(ci.firstChild);
     mid.appendChild(nm);
     var right = el('div', 'mc-remain');
     var rs = el('strong', null, ''); rs.id = 'mcRemain';
@@ -2722,21 +2720,7 @@
     mid.appendChild(right);
     box.appendChild(mid);
 
-    var lg = el('div', 'mc-legend');
-    var stage = el('span', 'mc-stage');
-    var dot = el('i', 'd-ok'); dot.id = 'mcDot';
-    stage.appendChild(dot);
-    var stTxt = el('span', null, ''); stTxt.id = 'mcStage';
-    stage.appendChild(stTxt);
-    lg.appendChild(stage);
-    [['d-ok', '여유 >40%'], ['d-mid', '주의 16~40%'], ['d-low', '임박 ≤15%']].forEach(function (z) {
-      var s = el('span');
-      s.appendChild(el('i', z[0]));
-      s.appendChild(document.createTextNode(z[1]));
-      lg.appendChild(s);
-    });
-    box.appendChild(lg);
-
+    
     var bar = el('div', 'zbar');
     var cover = el('div', 'zbar-cover'); cover.id = 'mcCover';
     bar.appendChild(cover);
@@ -2773,10 +2757,8 @@
     box.classList.remove('z-ok', 'z-mid', 'z-low');
     box.classList.add('z-' + zone);
     byId('mcRemain').textContent = remain(u.end) + ' 남음';
-    byId('mcStage').textContent = names[zone] + ' 단계 (잔여 ' + Math.round(leftPct) + '%)';
-    byId('mcDot').className = 'd-' + zone;
     byId('mcCover').style.width = leftPct + '%';
-    byId('mcProg').innerHTML = (zone === 'ok' ? '' : WARN_SVG + ' ') + '진행률 ' + Math.round(100 - leftPct) + '% (' + names[zone] + ')';
+    byId('mcProg').innerHTML = (zone === 'ok' ? '' : WARN_SVG + ' ') + '진행률 ' + Math.round(100 - leftPct) + '%';
   }
 
   /* 검색창 지우기(✕) 버튼 */
