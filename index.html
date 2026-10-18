@@ -1192,7 +1192,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, onValue, set, push, remove, runTransaction, query, limitToLast, orderByKey, startAt, endAt } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, onValue, set, push, remove, runTransaction, query, limitToLast, orderByKey, startAt, endAt, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAHXocwDHnG-U04R37_1sxmVuZi5nDtxV4",
@@ -1487,9 +1487,15 @@ onValue(query(ref(db, 'announcement_logs'), limitToLast(200)), (snapshot) => {
     logsData = snapshot.val() || {};
     logsLoaded = true;
     backfillStarts();
+    cleanupOldLogs(); 
     if (logViewOpen) renderLogList();
     if (statsOpen) renderStats();
   });
+  var archiveData = {};
+  onValue(query(ref(db, 'session_archive'), limitToLast(5000)), (snapshot) => {
+    archiveData = snapshot.val() || {};
+    if (statsOpen) renderStats();
+  }, function (err) { console.error('보관 기록 읽기 실패:', err); });
   var visitsUnsub = null;
   var visitsRangeKey = '';
 
@@ -1533,7 +1539,35 @@ onValue(query(ref(db, 'announcement_logs'), limitToLast(200)), (snapshot) => {
     if (u && u.end > now()) return u;
     return null;
   }
-
+    var RETAIN_DAYS = 14;
+  var cleaning = false;
+  function cleanupOldLogs() {
+    if (!logsLoaded || cleaning) return;
+    var n = new Date(now());
+    var cutoff = new Date(n.getFullYear(), n.getMonth(), n.getDate() - RETAIN_DAYS).getTime();
+    var old = buildSessions().filter(function (s) {
+      var live = state[s.profile] && state[s.profile].start === s.start;
+      return s.keys && s.keys.length && s.lastAt < cutoff && !live;
+    });
+    if (!old.length) return;
+    cleaning = true;
+    var chunks = [];
+    for (var i = 0; i < old.length; i += 100) chunks.push(old.slice(i, i + 100));
+    chunks.reduce(function (pr, chunk) {
+      return pr.then(function () {
+        var updates = {};
+        chunk.forEach(function (s) {
+          // 보관 저장 + 로그 삭제를 한 번에 처리: 보관이 실패하면 로그도 지워지지 않음
+          updates['session_archive/' + s.start + '_' + s.profile] =
+            { profile: s.profile, start: s.start, finalEnd: s.finalEnd, user: s.user || '' };
+          s.keys.forEach(function (k) { updates['usage_logs/' + k] = null; });
+        });
+        return update(ref(db), updates);
+      });
+    }, Promise.resolve()).catch(function (err) {
+      console.error('로그 정리 실패:', err);
+    }).then(function () { cleaning = false; });
+  }
   /* 만료된 세션 처리: '만료' 로그를 먼저 저장한 뒤에만 세션을 삭제함.
      (삭제 후 로그를 쓰는 방식은 그 사이에 탭이 닫히면 로그가 영영 사라짐)
      로그 ID가 고정이라 여러 기기가 동시에 실행해도 중복되지 않고,
@@ -2454,6 +2488,8 @@ function renderLogList() {
       var l = logsData[k];
       if (!l || !l.profile || !l.start) return;
       var s = get(l.profile, l.start, l.user);
+      s.keys.push(k);
+      s.lastAt = Math.max(s.lastAt, l.at || 0);
       if (l.user && (l.at || 0) >= (s.userAt || 0)) { s.user = l.user; s.userAt = l.at || 0; }
       if (l.type === 'start' || l.type === 'extend' || l.type === 'expired') {
         s.end = Math.max(s.end, l.end || 0);
