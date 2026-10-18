@@ -2235,7 +2235,7 @@ function openLogSheet() {
   var sw = el('div', 'search-box');
   sw.innerHTML = '<svg class="search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
   var si = document.createElement('input'); si.type = 'text'; si.autocomplete = 'off';
-  si.placeholder = '프로필 · 사용자 검색 (예: 크라피카, 김도현342)';
+  si.placeholder = '프로필 · 사용자 검색 (예: 크라피카, 홍길동123)';
   si.addEventListener('input', function () { logQuery = si.value; renderLogList(); });
   sw.appendChild(si); sheet.appendChild(sw);
 
