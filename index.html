@@ -1087,6 +1087,15 @@
 .lv-chip{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--free-bg);color:var(--free)}
 .lv-chip.b{background:var(--busy-bg);color:var(--busy)}
 .header-btns{display:flex;align-items:center;gap:8px}
+.ott-pill{
+  font-size:.75rem;
+  font-weight:700;
+  padding:3px 10px;
+  border-radius:999px;
+  background:var(--surface-sub);
+  color:var(--muted);
+  white-space:nowrap;
+}
 </style>
 </head>
 <body>
@@ -1632,17 +1641,21 @@
       var card = el('button', 'card ' + (u ? 'busy' : 'free'));
       
       var cardTop = el('div', 'card-top');
-      cardTop.appendChild(el('span', 'name', p));
-      if (currentCategory === 'all' || q) {
-        cardTop.appendChild(el('span', 'ott-tag', getProfileOtt(p)));
-      }
-      var star = el('span', 'fav' + (isFav(p) ? ' on' : ''));
+var pill = el('span', 'ott-pill', getProfileOtt(p));
+var svcInfo = SERVICES.find(function (s) { return s.id === getProfileService(p); });
+if (svcInfo) {
+  pill.style.color = svcInfo.color;
+  pill.style.background = svcInfo.color + '1f';   // 12% 투명도 배경
+}
+cardTop.appendChild(pill);
+var star = el('span', 'fav' + (isFav(p) ? ' on' : ''));
       star.innerHTML = ROCKET_SVG;
       star.setAttribute('role', 'button');
       star.setAttribute('aria-label', '즐겨찾기');
       star.addEventListener('click', function (e) { e.stopPropagation(); toggleFav(p); render(); });
       cardTop.appendChild(star);
       card.appendChild(cardTop);
+      card.appendChild(el('span', 'name', p));   // ← 이 줄 추가
 
       card.appendChild(el('span', 'badge', u ? '사용 중' : '사용 가능'));
       
