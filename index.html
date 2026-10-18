@@ -1703,9 +1703,7 @@
     });
   }
 
-  /* 사용 종료 확인 화면: 실수로 종료 버튼을 누르는 것을 방지 */
-  function openEndConfirm(p) {
-      /* 시간 연장 확인 화면: 실수로 연장 버튼을 누르는 것을 방지 */
+  /* 시간 연장 확인 화면: 실수로 연장 버튼을 누르는 것을 방지 */
   function openExtendConfirm(p, minutes, quiet) {
     var sheet = document.getElementById('sheet');
     sheet.className = 'sheet';
@@ -1737,6 +1735,9 @@
     var ov = document.getElementById('overlay');
     ov.classList.add('open'); ov.setAttribute('aria-hidden', 'false');
   }
+
+  /* 사용 종료 확인 화면: 실수로 종료 버튼을 누르는 것을 방지 */
+  function openEndConfirm(p) {
     var sheet = document.getElementById('sheet');
     sheet.className = 'sheet';
     sheet.textContent = '';
