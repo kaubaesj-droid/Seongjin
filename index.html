@@ -1192,7 +1192,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, onValue, set, push, remove, runTransaction, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, onValue, set, push, remove, runTransaction, query, limitToLast, orderByKey, startAt, endAt } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAHXocwDHnG-U04R37_1sxmVuZi5nDtxV4",
@@ -1490,6 +1490,33 @@ onValue(query(ref(db, 'announcement_logs'), limitToLast(200)), (snapshot) => {
     if (logViewOpen) renderLogList();
     if (statsOpen) renderStats();
   });
+  var visitsUnsub = null;
+  var visitsRangeKey = '';
+
+  function subscribeVisits() {
+    var r = periodRange();
+    var s = dateKey(r.start);
+    var e = dateKey(new Date(r.end.getTime() - 1));
+    var k = s + '~' + e;
+    if (k === visitsRangeKey) return;
+    visitsRangeKey = k;
+    if (visitsUnsub) visitsUnsub();
+    visitsData = {};
+    visitsUnsub = onValue(
+      query(ref(db, 'visits'), orderByKey(), startAt(s), endAt(e)),
+      function (snapshot) {
+        visitsData = snapshot.val() || {};
+        if (statsOpen) renderStats();
+      },
+      function (err) { console.error('접속 기록 읽기 실패:', err); }
+    );
+  }
+
+  function stopVisits() {
+    if (visitsUnsub) visitsUnsub();
+    visitsUnsub = null;
+    visitsRangeKey = '';
+  }
 
   onValue(ref(db, 'visits'), (snapshot) => {
     visitsData = snapshot.val() || {};
@@ -1952,6 +1979,7 @@ var star = el('span', 'fav' + (isFav(p) ? ' on' : ''));
   function closeSheet() {
     logViewOpen = false;
     statsOpen = false;
+    stopVisits();
     var ov = document.getElementById('overlay');
     ov.classList.remove('open'); ov.setAttribute('aria-hidden', 'true');
     document.getElementById('sheet').classList.remove('wide');
@@ -2649,6 +2677,7 @@ function renderLive(body) {
   function renderStats() {
     var body = document.getElementById('statsBody');
     if (!body) return;
+    subscribeVisits();
     body.textContent = '';
     renderLive(body);
     body.appendChild(el('div', 'stats-divider'));
