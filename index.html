@@ -915,10 +915,7 @@
   }
 
   /* ===== v1.2.0 추가 스타일 ===== */
-  .notice{display:flex;align-items:flex-start;gap:10px;background:var(--warn-bg);border:1px solid var(--warn);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:16px;font-size:.88rem}
-  .notice[hidden]{display:none}
-  .notice-text{flex:1;white-space:pre-wrap;word-break:break-word}
-  .notice-x{background:none;border:none;color:var(--muted);cursor:pointer;font:inherit;padding:0 2px}
+  
   .my-banner{display:none;position:sticky;top:8px;z-index:50;width:100%;margin-bottom:16px;padding:12px 16px;border:none;border-radius:var(--radius-md);background:var(--accent);color:var(--accent-ink);font:inherit;font-size:.88rem;font-weight:600;text-align:left;cursor:pointer;box-shadow:var(--shadow-md)}
   .my-banner.show{display:flex;justify-content:space-between;align-items:center}
   .my-banner.show::after{content:'›';font-size:1.1rem}
@@ -1097,6 +1094,22 @@
   white-space:nowrap;
 }
 .tab-count{display:none}
+/* 공지 배너 (알약형) */
+.notice{display:flex;align-items:center;gap:10px;background:var(--info-bg);border:1px solid var(--line);border-radius:999px;padding:10px 14px;margin-bottom:16px;font-size:.88rem}
+.notice[hidden]{display:none}
+.notice-ic{display:inline-flex;width:18px;height:18px;color:var(--muted);flex-shrink:0}
+.notice-ic svg{width:100%;height:100%}
+.notice-tag{background:var(--surface);color:var(--ink);font-weight:700;font-size:.78rem;padding:3px 10px;border-radius:999px;flex-shrink:0;white-space:nowrap}
+.notice-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.notice-more{background:none;border:none;color:var(--ink);font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;flex-shrink:0;padding:2px 4px}
+.notice-x{background:none;border:none;color:var(--muted);cursor:pointer;font:inherit;padding:0 2px;flex-shrink:0}
+
+/* 공지사항 목록 */
+.nt-item{display:block;width:100%;text-align:left;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:10px;cursor:pointer}
+.nt-top{display:flex;align-items:center;gap:8px}
+.nt-date{margin-left:auto;font-size:.74rem;color:var(--muted);font-weight:600;white-space:nowrap}
+.nt-text{margin-top:8px;font-size:.88rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;word-break:break-word}
+.nt-body{white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
 <body>
@@ -1146,6 +1159,11 @@
   <aside class="drawer" role="dialog" aria-label="메뉴">
     <div class="dr-head"><h2>메뉴</h2><button type="button" class="dr-x" id="drawerClose" aria-label="닫기">✕</button></div>
     <div class="dr-sec">주요 기능</div>
+    <button type="button" class="dr-item hl dr-nav" id="openNoticeBtn">
+  <span class="dr-ic plain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4h3l8 4V6L6 10H3z"/><path d="M17 9a4 4 0 0 1 0 6"/></svg></span>
+  <span class="dr-tx"><b>공지사항</b><small>지금까지 올라온 공지 기록</small></span>
+  <span class="dr-arrow">›</span>
+</button>
     <button type="button" class="dr-item hl dr-nav" id="openLogBtn">
       <span class="dr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 8v4l3 2"/></svg></span>
       <span class="dr-tx"><b>사용 로그</b><small>최근 프로필 대여 / 반납 기록</small></span>
@@ -1324,6 +1342,7 @@
   let visitsData = {};
   let hours = null;
   let announcement = null;
+  let noticeLogs = {};
 
   function getDeviceSessionId() {
     let sid = sget(SESSION_KEY);
@@ -1443,9 +1462,17 @@
   });
 
   onValue(ref(db, 'announcement'), (snapshot) => {
-    announcement = snapshot.val();
-    renderNotice();
-  });
+  announcement = snapshot.val();
+  renderNotice();
+  renderNoticeLogList();
+});
+
+onValue(query(ref(db, 'announcement_logs'), limitToLast(200)), (snapshot) => {
+  noticeLogs = snapshot.val() || {};
+  renderNoticeLogList();
+}, function (err) {
+  console.error('공지 로그 읽기 실패:', err);
+});
 
   const complaintsRef = ref(db, 'complaints');
   onValue(complaintsRef, (snapshot) => {
@@ -2797,23 +2824,101 @@ function renderLive(body) {
 
   /* 공지사항 배너 */
   var NOTICE_KEY = 'ott-board-notice-closed';
-  function renderNotice() {
-    var box = document.getElementById('notice');
-    if (!box) return;
-    box.textContent = '';
-    if (!announcement || !announcement.text || sget(NOTICE_KEY) === String(announcement.at)) {
-      box.hidden = true;
-      return;
-    }
-    box.hidden = false;
-    box.appendChild(el('span', null, '📢'));
-    box.appendChild(el('span', 'notice-text', announcement.text));
-    var x = el('button', 'notice-x', '✕');
-    x.type = 'button';
-    x.setAttribute('aria-label', '공지 닫기');
-    x.addEventListener('click', function () { sset(NOTICE_KEY, String(announcement.at)); renderNotice(); });
-    box.appendChild(x);
+  var MEGA_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4h3l8 4V6L6 10H3z"/><path d="M17 9a4 4 0 0 1 0 6"/></svg>';
+
+function noticeDate(ms) {
+  var d = new Date(ms);
+  return d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+function renderNotice() {
+  var box = document.getElementById('notice');
+  if (!box) return;
+  box.textContent = '';
+  if (!announcement || !announcement.text || sget(NOTICE_KEY) === String(announcement.at)) {
+    box.hidden = true;
+    return;
   }
+  box.hidden = false;
+  var ic = el('span', 'notice-ic'); ic.innerHTML = MEGA_SVG;
+  box.appendChild(ic);
+  box.appendChild(el('span', 'notice-tag', '공지'));
+  var tx = el('span', 'notice-text', announcement.text.replace(/\s+/g, ' '));
+  tx.addEventListener('click', function () { openNoticeDetail(announcement, false); });
+  box.appendChild(tx);
+  var more = el('button', 'notice-more', '자세히'); more.type = 'button';
+  more.addEventListener('click', function () { openNoticeDetail(announcement, false); });
+  box.appendChild(more);
+  var x = el('button', 'notice-x', '✕'); x.type = 'button';
+  x.setAttribute('aria-label', '공지 닫기');
+  x.addEventListener('click', function () { sset(NOTICE_KEY, String(announcement.at)); renderNotice(); });
+  box.appendChild(x);
+}
+
+/* 공지 상세 (fromList가 true면 '목록' 버튼으로 돌아감) */
+function openNoticeDetail(n, fromList) {
+  logViewOpen = false; statsOpen = false;
+  var sheet = document.getElementById('sheet');
+  sheet.className = 'sheet'; sheet.textContent = '';
+  var title = el('h2', null, '공지사항'); title.id = 'dlgTitle';
+  sheet.appendChild(title);
+  sheet.appendChild(el('p', 'hint', noticeDate(n.at) + ' 게시'));
+  sheet.appendChild(el('div', 'info nt-body', n.text));
+  var acts = el('div', 'actions');
+  var b = el('button', 'btn', fromList ? '목록' : '닫기');
+  b.addEventListener('click', function () { if (fromList) openNoticeLogSheet(); else closeSheet(); });
+  acts.appendChild(b);
+  sheet.appendChild(acts);
+  var ov = document.getElementById('overlay');
+  ov.classList.add('open'); ov.setAttribute('aria-hidden', 'false');
+}
+
+/* 공지사항 목록 (메뉴 탭) */
+function openNoticeLogSheet() {
+  logViewOpen = false; statsOpen = false;
+  var sheet = document.getElementById('sheet');
+  sheet.className = 'sheet'; sheet.textContent = '';
+  var title = el('h2', null, '공지사항'); title.id = 'dlgTitle';
+  sheet.appendChild(title);
+  sheet.appendChild(el('p', 'hint', '지금까지 올라온 공지를 최신순으로 볼 수 있어요.'));
+  var list = el('div'); list.id = 'noticeLogList';
+  sheet.appendChild(list);
+  var acts = el('div', 'actions');
+  var close = el('button', 'btn', '닫기'); close.addEventListener('click', closeSheet);
+  acts.appendChild(close);
+  sheet.appendChild(acts);
+  var ov = document.getElementById('overlay');
+  ov.classList.add('open'); ov.setAttribute('aria-hidden', 'false');
+  renderNoticeLogList();
+}
+
+function renderNoticeLogList() {
+  var list = document.getElementById('noticeLogList');
+  if (!list) return;
+  var items = Object.keys(noticeLogs).map(function (k) { return noticeLogs[k]; })
+    .filter(function (n) { return n && n.text && n.at; });
+  /* 로그 기능 추가 전에 올라간 현재 공지도 목록에 포함 */
+  if (announcement && announcement.text && !noticeLogs[announcement.at]) items.push(announcement);
+  items.sort(function (a, b) { return b.at - a.at; });
+
+  list.textContent = '';
+  if (!items.length) { list.appendChild(el('p', 'log-empty', '아직 올라온 공지가 없습니다.')); return; }
+  items.forEach(function (n) {
+    var live = announcement && announcement.at === n.at;
+    var row = el('button', 'nt-item'); row.type = 'button';
+    var top = el('div', 'nt-top');
+    top.appendChild(el('span', 'notice-tag', '공지'));
+    if (live) top.appendChild(el('span', 'lg-b s-active', '게시 중'));
+    top.appendChild(el('span', 'nt-date', noticeDate(n.at)));
+    row.appendChild(top);
+    row.appendChild(el('div', 'nt-text', n.text));
+    row.addEventListener('click', function () { openNoticeDetail(n, true); });
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('openNoticeBtn').addEventListener('click', openNoticeLogSheet);
+  
 
   /* 관리자: 공지 작성 + 사용 중 프로필 관리 */
   function buildAdminTools() {
@@ -2834,11 +2939,16 @@ function renderLive(body) {
         .catch(function (err) { alert('오류: ' + err.message); });
     });
     on.addEventListener('click', function () {
-      var text = ta.value.trim();
-      if (!text) { alert('공지 내용을 입력해주세요.'); return; }
-      set(ref(db, 'announcement'), { text: text, at: now() }).then(function () { alert('공지를 게시했습니다.'); })
-        .catch(function (err) { alert('오류: ' + err.message); });
-    });
+  var text = ta.value.trim();
+  if (!text) { alert('공지 내용을 입력해주세요.'); return; }
+  var t = now();
+  var data = { text: text, at: t };
+  Promise.all([
+    set(ref(db, 'announcement'), data),
+    set(ref(db, 'announcement_logs/' + t), data)
+  ]).then(function () { alert('공지를 게시했습니다.'); })
+    .catch(function (err) { alert('오류: ' + err.message); });
+});
     nacts.appendChild(off); nacts.appendChild(on);
     wrap.appendChild(nacts);
 
