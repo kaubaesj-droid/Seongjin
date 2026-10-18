@@ -2204,7 +2204,8 @@ function sessionCard(s) {
   else if (s.status === 'early') sub = clock(s.closeAt) + ' 반납 (' + s.remainingMin + '분 일찍)';
   else if (s.status === 'admin') sub = clock(s.closeAt) + ' 관리자 종료';
   else if (s.status === 'vanished') sub = clock(s.closeAt) + ' 감지 · 기록 없이 사라짐';
-  else sub = s.closeType === 'end_button' ? clock(s.closeAt) + ' 직접 반납' : clock(s.end) + ' 시간 만료';
+  else if (s.closeType === 'end_button') sub = clock(s.closeAt) + ' 직접 반납';
+  else sub = clock(s.end) + ' 시간 만료' + (s.detectedAt ? ' · 처리 ' + formatDateTime(s.detectedAt) : '');
   tm.appendChild(el('small', null, sub));
   r2.appendChild(tm);
   box.appendChild(r2);
