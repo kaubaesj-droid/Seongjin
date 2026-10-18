@@ -1705,6 +1705,38 @@
 
   /* 사용 종료 확인 화면: 실수로 종료 버튼을 누르는 것을 방지 */
   function openEndConfirm(p) {
+      /* 시간 연장 확인 화면: 실수로 연장 버튼을 누르는 것을 방지 */
+  function openExtendConfirm(p, minutes, quiet) {
+    var sheet = document.getElementById('sheet');
+    sheet.className = 'sheet';
+    sheet.textContent = '';
+
+    var title = el('h2', null, '시간을 연장하시겠습니까?');
+    title.id = 'dlgTitle';
+    sheet.appendChild(title);
+    sheet.appendChild(el('p', 'hint',
+      p + ' (' + getProfileOtt(p) + ') 사용 시간을 ' + (minutes >= 60 ? (minutes / 60) + '시간' : minutes + '분') + ' 연장합니다.'));
+
+    var acts = el('div', 'actions');
+    var back = el('button', 'btn', '취소');
+    back.addEventListener('click', function () {
+      if (quiet) closeSheet(); else openSheet(p);
+    });
+
+    var yes = el('button', 'btn primary', '네, 연장합니다');
+    yes.addEventListener('click', function () {
+      yes.disabled = true;
+      extendUsage(p, minutes, true);   // 연장 후 팝업은 닫음
+      closeSheet();
+    });
+
+    acts.appendChild(back);
+    acts.appendChild(yes);
+    sheet.appendChild(acts);
+
+    var ov = document.getElementById('overlay');
+    ov.classList.add('open'); ov.setAttribute('aria-hidden', 'false');
+  }
     var sheet = document.getElementById('sheet');
     sheet.className = 'sheet';
     sheet.textContent = '';
@@ -1763,10 +1795,9 @@
       if (isOwner) {
         var extGroup = el('div', 'extend-group');
         var ext30 = el('button', 'btn extend', '+30분 연장');
-        ext30.addEventListener('click', function () { extendUsage(p, 30); });
-
+        ext30.addEventListener('click', function () { openExtendConfirm(p, 30, false); });
         var ext60 = el('button', 'btn extend', '+1시간 연장');
-        ext60.addEventListener('click', function () { extendUsage(p, 60); });
+        ext60.addEventListener('click', function () { openExtendConfirm(p, 60, false); });
 
         extGroup.appendChild(ext30);
         extGroup.appendChild(ext60);
@@ -2997,7 +3028,7 @@ function renderLive(body) {
 
     var acts = el('div', 'mc-actions');
     var ext = el('button', 'btn extend', '+30분 연장'); ext.type = 'button';
-    ext.addEventListener('click', function () { extendUsage(p, 30, true); });
+    ext.addEventListener('click', function () { openExtendConfirm(p, 30, true); });
     var end = el('button', 'btn danger', '사용 종료 반납'); end.type = 'button';
     end.addEventListener('click', function () { openEndConfirm(p); });
     acts.appendChild(ext);
