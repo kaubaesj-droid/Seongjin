@@ -2480,7 +2480,7 @@ function renderLogList() {
     var map = {};
     function get(profile, start, user) {
       var sk = profile + '_' + start;
-      if (!map[sk]) map[sk] = { profile: profile, start: start, end: start, user: user || '', closedAt: null, vanishedAt: null };
+      if (!map[sk]) map[sk] = { profile: profile, start: start, end: start, user: user || '', closedAt: null, vanishedAt: null, lastAt: 0, keys: [] };
       return map[sk];
     }
 
