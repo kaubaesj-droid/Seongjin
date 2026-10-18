@@ -1182,7 +1182,7 @@
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.4.0',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.2.1',   // 하단에 표시되는 버전
     ADMIN_KEY: 'saintyoung26',      // 불편사항 조회 비밀키
     LOG_PIN: '1357',        // 사용 로그 핀코드
     STATS_PIN: '2468'       // 이용 현황 비밀번호
@@ -2133,7 +2133,7 @@ function buildLogSessions() {
   var map = {};
   function get(p, start) {
     var k = p + '_' + start;
-    return map[k] || (map[k] = { profile: p, start: start, user: '', userAt: -1, end: 0, extCount: 0, extMin: 0, closeType: null, closeAt: 0, remainingMin: 0, lastAt: 0 });
+    return map[k] || (map[k] = { profile: p, start: start, user: '', userAt: -1, end: 0, extCount: 0, extMin: 0, closeType: null, closeAt: 0, remainingMin: 0, lastAt: 0, detectedAt: 0 });
   }
   Object.keys(logsData).forEach(function (k) {
     var l = logsData[k];
@@ -2145,6 +2145,7 @@ function buildLogSessions() {
     if (l.type === 'extend') { s.extCount++; s.extMin += l.addedMin || 0; }
     if (l.type === 'end_button' || l.type === 'admin_end' || l.type === 'expired' || l.type === 'vanished') {
       s.closeType = l.type; s.closeAt = at; s.remainingMin = l.remainingMin || 0;
+      s.detectedAt = l.detectedAt || 0;
     }
   });
   Object.keys(state).forEach(function (k) {
