@@ -1524,12 +1524,7 @@ onValue(query(ref(db, 'announcement_logs'), limitToLast(200)), (snapshot) => {
     visitsRangeKey = '';
   }
 
-  onValue(ref(db, 'visits'), (snapshot) => {
-    visitsData = snapshot.val() || {};
-    if (statsOpen) renderStats();
-  }, function (err) {
-    console.error('접속 기록 읽기 실패:', err);
-  });
+  
 
   function lastName() { return sget(NAME_KEY) || ''; }
   function saveName(n) { sset(NAME_KEY, n); }
@@ -2506,6 +2501,14 @@ function renderLogList() {
       if (!u || !u.start) return;
       var s = get(k, u.start, u.user);
       s.end = Math.max(s.end, u.end || 0);
+    });
+    // 로그가 지워진 옛 세션은 보관 데이터에서 가져옴 (로그가 남아 있으면 로그 기준)
+    Object.keys(archiveData).forEach(function (k) {
+      var a = archiveData[k];
+      if (!a || !a.profile || !a.start) return;
+      var sk = a.profile + '_' + a.start;
+      if (map[sk]) return;
+      map[sk] = { profile: a.profile, start: a.start, end: a.finalEnd, user: a.user || '', closedAt: null, vanishedAt: null, lastAt: 0, keys: [] };
     });
 
     var t = now();
