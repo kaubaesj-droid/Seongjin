@@ -1385,12 +1385,14 @@
   function logId(type, p, u) {
     return u.start + '_' + p + '_' + type;
   }
+  function logDay(u) { return dateKey(new Date(u.start)); }
+  function logPath(id, u) { return 'usage_logs/' + logDay(u) + '/' + id; }
 
   function writeLog(type, p, u, extra) {
     var t = now();
     var id = logId(type, p, u) + ((type === 'extend' || type === 'admin_edit') ? '_' + t : '');
     var data = buildLog(type, p, u, extra);
-    return set(ref(db, 'usage_logs/' + id), data).then(function () {
+    return set(ref(db, logPath(id, u)), data).then(function () {
       var v = document.getElementById('verInfo');
       if (v) { v.textContent = CONFIG.VERSION; v.className = 'ver-info'; }
     }).catch(function (err) {
@@ -1416,7 +1418,7 @@
         var cur = state[k];
         if (!cur || cur.start !== u.start || logsData[id]) { delete backfilling[id]; return; }
         var data = buildLog('start', k, cur, { at: cur.start, backfilled: true });
-        runTransaction(ref(db, 'usage_logs/' + id), function (existing) {
+        runTransaction(ref(db, logPath(id, u)), function (existing) {
           return existing === null ? data : undefined;
         }).catch(function (err) {
           console.error('등록 로그 보정 실패:', err);
@@ -1483,11 +1485,26 @@ onValue(query(ref(db, 'announcement_logs'), limitToLast(200)), (snapshot) => {
   let statsOpen = false;
   let logFilter = 'all';
   let logDate = new Date();   // 사용 로그에서 보고 있는 날짜 (열 때마다 오늘로 초기화)
+  var logPaths = {};
   onValue(query(ref(db, 'usage_logs'), limitToLast(2000)), (snapshot) => {
-    logsData = snapshot.val() || {};
+    var flat = {}, paths = {};
+    snapshot.forEach(function (child) {
+      var v = child.val();
+      if (v && v.type) {                       // 예전 방식 (날짜 폴더 없음)
+        flat[child.key] = v;
+        paths[child.key] = 'usage_logs/' + child.key;
+      } else {                                 // 새 방식 (날짜 폴더)
+        child.forEach(function (g) {
+          flat[g.key] = g.val();
+          paths[g.key] = 'usage_logs/' + child.key + '/' + g.key;
+        });
+      }
+    });
+    logsData = flat;
+    logPaths = paths;
     logsLoaded = true;
     backfillStarts();
-    cleanupOldLogs(); 
+    cleanupOldLogs();
     if (logViewOpen) renderLogList();
     if (statsOpen) renderStats();
   });
@@ -1555,7 +1572,7 @@ onValue(query(ref(db, 'announcement_logs'), limitToLast(200)), (snapshot) => {
           // 보관 저장 + 로그 삭제를 한 번에 처리: 보관이 실패하면 로그도 지워지지 않음
           updates['session_archive/' + s.start + '_' + s.profile] =
             { profile: s.profile, start: s.start, finalEnd: s.finalEnd, user: s.user || '' };
-          s.keys.forEach(function (k) { updates['usage_logs/' + k] = null; });
+          s.keys.forEach(function (k) { updates[logPaths[k] || ('usage_logs/' + k)] = null; });
         });
         return update(ref(db), updates);
       });
@@ -1577,7 +1594,7 @@ onValue(query(ref(db, 'announcement_logs'), limitToLast(200)), (snapshot) => {
       purging[token] = true;
 
       var data = buildLog('expired', k, u, { at: u.end, detectedAt: now() });
-      set(ref(db, 'usage_logs/' + logId('expired', k, u)), data)
+      set(ref(db, logPath(logId('expired', k, u), u)), data)
         .then(function () {
           return runTransaction(ref(db, 'ott_state/' + k), function (cur) {
             if (cur && cur.start === u.start && cur.end <= now()) return null;
