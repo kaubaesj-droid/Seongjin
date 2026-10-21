@@ -1192,6 +1192,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
   import { getDatabase, ref, onValue, set, push, remove, runTransaction, query, limitToLast, orderByKey, startAt, endAt, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
   const firebaseConfig = {
@@ -1207,6 +1208,10 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+
+  isSupported().then(function (ok) {
+  if (ok) getAnalytics(app);
+}).catch(function () {});
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
