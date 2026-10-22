@@ -1132,6 +1132,93 @@ footer.tap { animation: eggTap .18s ease; }
   transform: translateX(-100%);
   animation: eggSweep 1.1s cubic-bezier(.5, 0, .3, 1) forwards;
 }
+@keyframes eggSweep {
+  to { transform: translateX(170vw); }
+}
+
+/* 폭죽 입자 */
+.egg-pop {
+  position: fixed;
+  z-index: 295;
+  pointer-events: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  animation: eggPop 1.3s cubic-bezier(.15, .7, .3, 1) forwards;
+}
+@keyframes eggPop {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(.4) rotate(0deg); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.1) rotate(var(--rot)); }
+}
+
+/* 안내 토스트 */
+.egg-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%) translateY(20px);
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: .88rem;
+  font-weight: 700;
+  z-index: 300;
+  opacity: 0;
+  transition: all .3s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.egg-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== 무지개 테마 ===== */
+:root {
+  --rb: linear-gradient(90deg, #ff3b30, #ff9500, #ffcc00, #34c759, #00c7be, #007aff, #af52de, #ff3b30);
+}
+@keyframes rbFlow { to { background-position: 200% 50%; } }
+
+:root.rainbow h1 {
+  background: var(--rb);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rbFlow 4s linear infinite;
+}
+
+:root.rainbow .tab[aria-selected="true"],
+:root.rainbow .chip[aria-checked="true"],
+:root.rainbow .log-filter-btn[aria-checked="true"],
+:root.rainbow .btn.primary {
+  background: var(--rb);
+  background-size: 200% 100%;
+  animation: rbFlow 4s linear infinite;
+  color: #fff;
+  border-color: transparent;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+}
+
+:root.rainbow .card {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--rb) border-box;
+  background-size: auto, 200% 100%;
+  animation: rbFlow 6s linear infinite;
+}
+
+:root.rainbow .bar > i,
+:root.rainbow .bar.mid > i,
+:root.rainbow .bar.low > i {
+  background: var(--rb);
+  background-size: 200% 100%;
+  animation: rbFlow 3s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root.rainbow * { animation: none !important; }
+}
 /* ===== 잠금(사라짐) 모션 ===== */
 /* 반대 방향 + 색이 빠지는 물결 */
 .egg-sweep.off {
