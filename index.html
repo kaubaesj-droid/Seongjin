@@ -3571,7 +3571,23 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
   }
   // 이스터에그 활성화 기록을 Firebase에 저장
 function logEasterEgg(eventName) {
-  var userName = lastName();
+  var userName = lastName() || '이름 미등록';
+
+  // 한국 시간 기준 날짜 생성
+  var now = new Date();
+  var dateKey =
+    now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0');
+
+  push(ref(db, 'easter_egg_activations/' + dateKey), {
+    user: userName,
+    event: eventName,
+    timestamp: Date.now()
+  }).catch(function (err) {
+    console.error('이스터에그 기록 저장 실패:', err);
+  });
+}
 
   // 이름이 저장되어 있지 않은 경우
   if (!userName) userName = '이름 미등록';
