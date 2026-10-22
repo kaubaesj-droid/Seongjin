@@ -3610,12 +3610,13 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
     clearTimeout(timer);
 
     if (item.hidden) {
-      // 잠금 → 해금
+      // 잠금 → 해금 (무지개 테마도 바로 적용)
       item.hidden = false;
       sset(UNLOCK_KEY, '1');
+      setRainbow(true);
       if (!reduced()) { restart('tap'); sweep(true); burst(); }
       buzz([40, 60, 40]);
-      toast('🌈 숨겨진 메뉴가 열렸어요! 메뉴에서 확인해 보세요');
+      toast('🌈 무지개 테마가 켜졌어요! 메뉴에서 끌 수 있어요');
     } else {
       // 해금 → 잠금 (무지개도 끄고 초기 상태로)
       setRainbow(false);
