@@ -1111,6 +1111,83 @@
 .nt-text{margin-top:8px;font-size:.88rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;word-break:break-word}
 .nt-body{white-space:pre-wrap;word-break:break-word}
 .dr-item[hidden] { display: none; }
+/* ===== 이스터에그 모션 ===== */
+footer.tap { animation: eggTap .18s ease; }
+@keyframes eggTap {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(.93); }
+  100% { transform: scale(1); }
+}
+
+/* 화면을 가로지르는 물결 */
+.egg-sweep {
+  position: fixed;
+  top: 0; bottom: 0; left: 0;
+  width: 70vw;
+  z-index: 290;
+  pointer-events: none;
+  opacity: .55;
+  filter: blur(6px);
+  background: linear-gradient(90deg, transparent, #ff3b30, #ff9500, #ffcc00, #34c759, #00c7be, #007aff, #af52de, transparent);
+  transform: translateX(-100%);
+  animation: eggSweep 1.1s cubic-bezier(.5, 0, .3, 1) forwards;
+}
+/* ===== 잠금(사라짐) 모션 ===== */
+/* 반대 방향 + 색이 빠지는 물결 */
+.egg-sweep.off {
+  transform: translateX(100vw);
+  animation: eggSweepBack 1.2s cubic-bezier(.5, 0, .3, 1) forwards,
+             eggDrain 1.2s linear forwards;
+}
+@keyframes eggSweepBack {
+  to { transform: translateX(-170vw); }
+}
+@keyframes eggDrain {
+  from { filter: blur(6px) grayscale(0); }
+  to   { filter: blur(6px) grayscale(1); }
+}
+
+/* 화면 전체가 순간 흑백 */
+.egg-gray {
+  position: fixed;
+  inset: 0;
+  z-index: 288;
+  pointer-events: none;
+  -webkit-backdrop-filter: grayscale(1);
+  backdrop-filter: grayscale(1);
+  animation: eggGray .9s ease forwards;
+}
+@keyframes eggGray {
+  0%   { opacity: 0; }
+  30%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 푸터 부르르 */
+footer.shake { animation: eggShake .5s ease; }
+@keyframes eggShake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-7px) rotate(-1deg); }
+  30% { transform: translateX(6px) rotate(1deg); }
+  45% { transform: translateX(-5px); }
+  60% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+}
+
+/* 피어오르는 연기 */
+.egg-smoke {
+  position: fixed;
+  z-index: 295;
+  pointer-events: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  animation: eggSmoke 1.4s ease-out forwards;
+}
+@keyframes eggSmoke {
+  0%   { opacity: .9; transform: translate(-50%, -50%) scale(.6); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% - var(--dy))) scale(2.2); }
+}
 </style>
 </head>
 <body>
@@ -3362,13 +3439,78 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
     toast(on ? '🌈 무지개 테마 ON!' : '무지개 테마 OFF');
   });
 
+  /* ----- 모션 ----- */
+  function reduced() {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function restart(cls) {                 // 푸터 애니메이션 재시작
+    footer.classList.remove('tap', 'shake');
+    void footer.offsetWidth;
+    footer.classList.add(cls);
+  }
+
+  function sweep(on) {                    // 해금: →, 잠금: ← (색이 빠짐)
+    var s = document.createElement('div');
+    s.className = 'egg-sweep' + (on ? '' : ' off');
+    document.body.appendChild(s);
+    setTimeout(function () { s.remove(); }, 1300);
+  }
+
+  function grayFlash() {                  // 화면 전체 순간 흑백
+    var g = document.createElement('div');
+    g.className = 'egg-gray';
+    document.body.appendChild(g);
+    setTimeout(function () { g.remove(); }, 1000);
+  }
+
+  function burst() {                      // 해금: 폭죽
+    var r = footer.getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    var set = ['🌈', '✨', '🎉', '⭐', '💫'];
+    for (var i = 0; i < 26; i++) {
+      var p = document.createElement('div');
+      p.className = 'egg-pop';
+      p.textContent = set[Math.floor(Math.random() * set.length)];
+      p.style.left = cx + 'px';
+      p.style.top = cy + 'px';
+      p.style.setProperty('--dx', ((Math.random() - 0.5) * window.innerWidth * 0.9) + 'px');
+      p.style.setProperty('--dy', (-(120 + Math.random() * window.innerHeight * 0.5)) + 'px');
+      p.style.setProperty('--rot', ((Math.random() - 0.5) * 720) + 'deg');
+      document.body.appendChild(p);
+      (function (e) { setTimeout(function () { e.remove(); }, 1400); })(p);
+    }
+  }
+
+  function smoke() {                      // 잠금: 연기가 피어오르며 사라짐
+    var r = footer.getBoundingClientRect();
+    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    var set = ['💨', '☁️', '💨'];
+    for (var i = 0; i < 14; i++) {
+      var p = document.createElement('div');
+      p.className = 'egg-smoke';
+      p.textContent = set[Math.floor(Math.random() * set.length)];
+      p.style.left = (cx + (Math.random() - 0.5) * r.width * 0.8) + 'px';
+      p.style.top = cy + 'px';
+      p.style.setProperty('--dx', ((Math.random() - 0.5) * 120) + 'px');
+      p.style.setProperty('--dy', (60 + Math.random() * 140) + 'px');
+      p.style.animationDelay = (Math.random() * 0.25) + 's';
+      document.body.appendChild(p);
+      (function (e) { setTimeout(function () { e.remove(); }, 1700); })(p);
+    }
+  }
+
+  function buzz(pattern) {                // 진동 (지원하는 기기만)
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  }
+
   // 푸터 5연타 → 해금 / 잠금 전환
   var taps = 0, timer = null;
   footer.addEventListener('click', function () {
     taps++;
     clearTimeout(timer);
     timer = setTimeout(function () { taps = 0; }, 2000);   // 2초 안에 이어서 눌러야 함
-    if (taps < 5) return;
+    if (taps < 5) { if (!reduced()) restart('tap'); buzz(15); return; }
     taps = 0;
     clearTimeout(timer);
 
@@ -3376,12 +3518,16 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
       // 잠금 → 해금
       item.hidden = false;
       sset(UNLOCK_KEY, '1');
+      if (!reduced()) { restart('tap'); sweep(true); burst(); }
+      buzz([40, 60, 40]);
       toast('🌈 숨겨진 메뉴가 열렸어요! 메뉴에서 확인해 보세요');
     } else {
       // 해금 → 잠금 (무지개도 끄고 초기 상태로)
       setRainbow(false);
       item.hidden = true;
       sset(UNLOCK_KEY, '0');
+      if (!reduced()) { restart('shake'); sweep(false); grayFlash(); smoke(); }
+      buzz([60, 40, 60]);
       toast('무지개 메뉴를 다시 숨겼어요');
     }
   });
