@@ -3589,10 +3589,17 @@ function logEasterEgg(eventName) {
   });
 }
 
-  // 이름이 저장되어 있지 않은 경우
-  if (!userName) userName = '이름 미등록';
+  // 이스터에그 활성화 기록을 Firebase에 날짜별로 저장
+function logEasterEgg(eventName) {
+  var userName = lastName() || '이름 미등록';
+  var now = new Date();
 
-  push(ref(db, 'easter_egg_activations'), {
+  var dateKey =
+    now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0');
+
+  push(ref(db, 'easter_egg_activations/' + dateKey), {
     user: userName,
     event: eventName,
     timestamp: Date.now()
