@@ -3569,7 +3569,21 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
   function buzz(pattern) {                // 진동 (지원하는 기기만)
     if (navigator.vibrate) navigator.vibrate(pattern);
   }
+  // 이스터에그 활성화 기록을 Firebase에 저장
+function logEasterEgg(eventName) {
+  var userName = lastName();
 
+  // 이름이 저장되어 있지 않은 경우
+  if (!userName) userName = '이름 미등록';
+
+  push(ref(db, 'easter_egg_activations'), {
+    user: userName,
+    event: eventName,
+    timestamp: Date.now()
+  }).catch(function (err) {
+    console.error('이스터에그 기록 저장 실패:', err);
+  });
+}
   // 푸터 5연타 → 해금 / 잠금 전환
   var taps = 0, timer = null;
   footer.addEventListener('click', function () {
@@ -3582,6 +3596,7 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
 
     if (item.hidden) {
       // 잠금 → 해금 (무지개 테마도 바로 적용)
+      logEasterEgg('rainbow_unlock');
       item.hidden = false;
       sset(UNLOCK_KEY, '1');
       setRainbow(true);
@@ -3590,6 +3605,7 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
       toast('무지개 테마가 켜졌어요! 메뉴에서 끌 수 있어요');
     } else {
       // 해금 → 잠금 (무지개도 끄고 초기 상태로)
+      logEasterEgg('rainbow_lock');
       setRainbow(false);
       item.hidden = true;
       sset(UNLOCK_KEY, '0');
