@@ -1261,22 +1261,9 @@ footer.shake { animation: eggShake .5s ease; }
   75% { transform: translateX(-2px); }
 }
 
-/* 피어오르는 연기 */
-.egg-smoke {
-  position: fixed;
-  z-index: 295;
-  pointer-events: none;
-  font-size: 1.6rem;
-  line-height: 1;
-  transform: translate(-50%, -50%);
-  animation: eggSmoke 1.4s ease-out forwards;
-}
-@keyframes eggSmoke {
-  0%   { opacity: .9; transform: translate(-50%, -50%) scale(.6); }
-  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% - var(--dy))) scale(2.2); }
-}
+
 @media (prefers-reduced-motion: reduce) {
-  .egg-sweep, .egg-pop, .egg-gray, .egg-smoke { display: none; }
+  .egg-sweep, .egg-pop, .egg-gray { display: none; }
   footer.tap, footer.shake { animation: none; }
 }
 .dr-ic.rb {
@@ -3577,23 +3564,7 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
     }
   }
 
-  function smoke() {                      // 잠금: 연기가 피어오르며 사라짐
-    var r = footer.getBoundingClientRect();
-    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    var set = ['💨', '☁️', '💨'];
-    for (var i = 0; i < 14; i++) {
-      var p = document.createElement('div');
-      p.className = 'egg-smoke';
-      p.textContent = set[Math.floor(Math.random() * set.length)];
-      p.style.left = (cx + (Math.random() - 0.5) * r.width * 0.8) + 'px';
-      p.style.top = cy + 'px';
-      p.style.setProperty('--dx', ((Math.random() - 0.5) * 120) + 'px');
-      p.style.setProperty('--dy', (60 + Math.random() * 140) + 'px');
-      p.style.animationDelay = (Math.random() * 0.25) + 's';
-      document.body.appendChild(p);
-      (function (e) { setTimeout(function () { e.remove(); }, 1700); })(p);
-    }
-  }
+  
 
   function buzz(pattern) {                // 진동 (지원하는 기기만)
     if (navigator.vibrate) navigator.vibrate(pattern);
@@ -3622,7 +3593,7 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
       setRainbow(false);
       item.hidden = true;
       sset(UNLOCK_KEY, '0');
-      if (!reduced()) { restart('shake'); sweep(false); grayFlash(); smoke(); }
+      if (!reduced()) { restart('shake'); sweep(false); grayFlash();  }
       buzz([60, 40, 60]);
       toast('무지개 메뉴를 다시 숨겼어요');
     }
