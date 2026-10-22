@@ -1110,6 +1110,7 @@
 .nt-date{margin-left:auto;font-size:.74rem;color:var(--muted);font-weight:600;white-space:nowrap}
 .nt-text{margin-top:8px;font-size:.88rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;word-break:break-word}
 .nt-body{white-space:pre-wrap;word-break:break-word}
+.dr-item[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -1179,6 +1180,11 @@
       <span class="dr-tx"><b>야간 모드</b></span>
             <button type="button" class="switch" id="themeSwitch" role="switch" aria-checked="false" aria-label="야간 모드"></button>
     </div>
+    <div class="dr-item" id="rainbowItem" hidden>
+      <span class="dr-ic" style="background:var(--rb);color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 18a9 9 0 0 1 18 0M7 18a5 5 0 0 1 10 0"/></svg></span>
+      <span class="dr-tx"><b>무지개 테마</b><small>숨겨진 메뉴를 찾았어요 🌈</small></span>
+      <button type="button" class="switch" id="rainbowSwitch" role="switch" aria-checked="false" aria-label="무지개 테마"></button>
+    </div>
     <button type="button" class="dr-item dr-nav" id="openContactBtn">
       <span class="dr-ic plain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>
       <span class="dr-tx"><b>관리자 문의</b></span>
@@ -1215,7 +1221,7 @@
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.2.0',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.2.1',   // 하단에 표시되는 버전
     ADMIN_KEY: 'saintyoung26',      // 불편사항 조회 비밀키
     LOG_PIN: '1357',        // 사용 로그 핀코드
     STATS_PIN: '2468'       // 이용 현황 비밀번호
@@ -3328,7 +3334,70 @@ document.getElementById('drawerClose').addEventListener('click', closeDrawer);
 drawerOv.addEventListener('click', function (e) { if (e.target === drawerOv) closeDrawer(); });
 document.querySelectorAll('.dr-nav').forEach(function (b) { b.addEventListener('click', closeDrawer); });
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
+/* ===== 이스터에그: 푸터 5연타 → 무지개 메뉴 해금 / 다시 5연타 → 잠금 ===== */
+(function () {
+  var RB_KEY = 'ott-board-rainbow';              // 켜짐 상태
+  var UNLOCK_KEY = 'ott-board-rainbow-unlocked'; // 메뉴 해금 여부
+  var root = document.documentElement;
+  var footer = document.querySelector('footer');
+  var item = document.getElementById('rainbowItem');
+  var sw = document.getElementById('rainbowSwitch');
+  if (!footer || !item || !sw) return;
 
+  function setRainbow(on) {
+    root.classList.toggle('rainbow', on);
+    sw.setAttribute('aria-checked', on ? 'true' : 'false');
+    sset(RB_KEY, on ? '1' : '0');
+  }
+
+  // 저장된 상태 복원
+  var unlocked = sget(UNLOCK_KEY) === '1';
+  item.hidden = !unlocked;
+  setRainbow(unlocked && sget(RB_KEY) === '1');
+
+  // 메뉴 안 스위치로 켜고 끄기
+  sw.addEventListener('click', function () {
+    var on = !root.classList.contains('rainbow');
+    setRainbow(on);
+    toast(on ? '🌈 무지개 테마 ON!' : '무지개 테마 OFF');
+  });
+
+  // 푸터 5연타 → 해금 / 잠금 전환
+  var taps = 0, timer = null;
+  footer.addEventListener('click', function () {
+    taps++;
+    clearTimeout(timer);
+    timer = setTimeout(function () { taps = 0; }, 2000);   // 2초 안에 이어서 눌러야 함
+    if (taps < 5) return;
+    taps = 0;
+    clearTimeout(timer);
+
+    if (item.hidden) {
+      // 잠금 → 해금
+      item.hidden = false;
+      sset(UNLOCK_KEY, '1');
+      toast('🌈 숨겨진 메뉴가 열렸어요! 메뉴에서 확인해 보세요');
+    } else {
+      // 해금 → 잠금 (무지개도 끄고 초기 상태로)
+      setRainbow(false);
+      item.hidden = true;
+      sset(UNLOCK_KEY, '0');
+      toast('무지개 메뉴를 다시 숨겼어요');
+    }
+  });
+
+  function toast(msg) {
+    var t = document.createElement('div');
+    t.className = 'egg-toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    requestAnimationFrame(function () { t.classList.add('show'); });
+    setTimeout(function () {
+      t.classList.remove('show');
+      setTimeout(function () { t.remove(); }, 300);
+    }, 2200);
+  }
+})();
   renderTabs();
   recordVisit();
   document.getElementById('searchInput').addEventListener('input', render);
