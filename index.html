@@ -3531,7 +3531,7 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
   sw.addEventListener('click', function () {
     var on = !root.classList.contains('rainbow');
     setRainbow(on);
-    toast(on ? '🌈 무지개 테마 ON!' : '무지개 테마 OFF');
+    toast(on ? '무지개 테마 ON!' : '무지개 테마 OFF');
   });
 
   /* ----- 모션 ----- */
@@ -3616,7 +3616,7 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
       setRainbow(true);
       if (!reduced()) { restart('tap'); sweep(true); burst(); }
       buzz([40, 60, 40]);
-      toast('🌈 무지개 테마가 켜졌어요! 메뉴에서 끌 수 있어요');
+      toast('무지개 테마가 켜졌어요! 메뉴에서 끌 수 있어요');
     } else {
       // 해금 → 잠금 (무지개도 끄고 초기 상태로)
       setRainbow(false);
