@@ -1705,6 +1705,35 @@ footer.shake { animation: eggShake .5s ease; }
   border-color: rgba(255, 255, 255, .7);
   box-shadow: 0 4px 18px rgba(200, 140, 255, .45), inset 0 1px 0 rgba(255, 255, 255, .75);
 }
+
+/* ===== 제목 · 선택된 탭: 파스텔 무지개 톤 ===== */
+:root.rainbow h1 {
+  background: linear-gradient(90deg, #ff8fb8, #ffb877, #ffe874, #8affb8, #74e8ff, #8a9cff, #cf9aff, #ff8fb8);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 2px rgba(90, 50, 150, .35));
+}
+:root.rainbow .tab[aria-selected="true"] {
+  background: linear-gradient(90deg, #ff8fb8, #ffb877, #ffe874, #8affb8, #74e8ff, #8a9cff, #cf9aff, #ff8fb8);
+  background-size: 200% 100%;
+  color: #1b1230;
+  text-shadow: none;
+  border-color: rgba(255, 255, 255, .7);
+  box-shadow: 0 4px 16px rgba(200, 140, 255, .40), inset 0 1px 0 rgba(255, 255, 255, .75);
+}
+
+/* ===== 전체 / 사용 가능 / 사용 중 필터: 선택된 버튼 파스텔 무지개 ===== */
+:root.rainbow .filter-bar .filter-btn[aria-checked="true"] {
+  background: linear-gradient(90deg, #ff8fb8, #ffb877, #ffe874, #8affb8, #74e8ff, #8a9cff, #cf9aff, #ff8fb8);
+  background-size: 200% 100%;
+  animation: rbFlow 4s linear infinite;
+  color: #1b1230;
+  font-weight: 700;
+  text-shadow: none;
+  box-shadow: 0 3px 12px rgba(200, 140, 255, .40), inset 0 1px 0 rgba(255, 255, 255, .75);
+}
 </style>
 </head>
 <body>
