@@ -1418,6 +1418,72 @@ footer.shake { animation: eggShake .5s ease; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root.rainbow { --surface: rgba(255, 255, 255, .72); --glass-strong: rgba(255, 255, 255, .85); }
 }
+
+/* ===== 무지개 테마: 야간 모드 시인성 개선 ===== */
+@media (prefers-color-scheme: dark) {
+  :root.rainbow:not([data-theme="light"]) {
+    --surface: rgba(20, 14, 42, .58);
+    --surface-sub: rgba(255, 255, 255, .09);
+    --line: rgba(255, 255, 255, .22);
+    --info-bg: rgba(20, 14, 42, .5);
+    --glass-hl: rgba(255, 255, 255, .10);
+    --glass-strong: rgba(16, 11, 34, .84);
+    --ink: #ffffff;
+    --muted: #d3d5e2;
+    --subtle: #b4b7c9;
+  }
+  :root.rainbow:not([data-theme="light"]) body::before { opacity: .20; filter: blur(80px); }
+  :root.rainbow:not([data-theme="light"]) body::after {
+    background:
+      radial-gradient(2px 2px at 18% 28%, #fff, transparent 70%),
+      radial-gradient(2px 2px at 72% 14%, #fff, transparent 70%),
+      radial-gradient(3px 3px at 86% 58%, #fff, transparent 70%),
+      radial-gradient(2px 2px at 34% 76%, #fff, transparent 70%),
+      radial-gradient(42vmax 42vmax at 14% 8%, rgba(255, 90, 180, .20), transparent 62%),
+      radial-gradient(46vmax 46vmax at 92% 24%, rgba(80, 170, 255, .20), transparent 62%),
+      radial-gradient(50vmax 50vmax at 28% 96%, rgba(255, 200, 80, .14), transparent 62%),
+      radial-gradient(42vmax 42vmax at 86% 92%, rgba(150, 100, 255, .22), transparent 62%);
+  }
+  :root.rainbow:not([data-theme="light"]) .card,
+  :root.rainbow:not([data-theme="light"]) .summary,
+  :root.rainbow:not([data-theme="light"]) .notice,
+  :root.rainbow:not([data-theme="light"]) .mine-card,
+  :root.rainbow:not([data-theme="light"]) .sheet,
+  :root.rainbow:not([data-theme="light"]) .drawer { text-shadow: 0 1px 3px rgba(0, 0, 0, .45); }
+  :root.rainbow:not([data-theme="light"]) .tab:not([aria-selected="true"]) { color: var(--muted); }
+  
+}
+
+:root.rainbow[data-theme="dark"] {
+  --surface: rgba(20, 14, 42, .58);
+  --surface-sub: rgba(255, 255, 255, .09);
+  --line: rgba(255, 255, 255, .22);
+  --info-bg: rgba(20, 14, 42, .5);
+  --glass-hl: rgba(255, 255, 255, .10);
+  --glass-strong: rgba(16, 11, 34, .84);
+  --ink: #ffffff;
+  --muted: #d3d5e2;
+  --subtle: #b4b7c9;
+}
+:root.rainbow[data-theme="dark"] body::before { opacity: .20; filter: blur(80px); }
+:root.rainbow[data-theme="dark"] body::after {
+  background:
+    radial-gradient(2px 2px at 18% 28%, #fff, transparent 70%),
+    radial-gradient(2px 2px at 72% 14%, #fff, transparent 70%),
+    radial-gradient(3px 3px at 86% 58%, #fff, transparent 70%),
+    radial-gradient(2px 2px at 34% 76%, #fff, transparent 70%),
+    radial-gradient(42vmax 42vmax at 14% 8%, rgba(255, 90, 180, .20), transparent 62%),
+    radial-gradient(46vmax 46vmax at 92% 24%, rgba(80, 170, 255, .20), transparent 62%),
+    radial-gradient(50vmax 50vmax at 28% 96%, rgba(255, 200, 80, .14), transparent 62%),
+    radial-gradient(42vmax 42vmax at 86% 92%, rgba(150, 100, 255, .22), transparent 62%);
+}
+:root.rainbow[data-theme="dark"] .card,
+:root.rainbow[data-theme="dark"] .summary,
+:root.rainbow[data-theme="dark"] .notice,
+:root.rainbow[data-theme="dark"] .mine-card,
+:root.rainbow[data-theme="dark"] .sheet,
+:root.rainbow[data-theme="dark"] .drawer { text-shadow: 0 1px 3px rgba(0, 0, 0, .45); }
+:root.rainbow[data-theme="dark"] .tab:not([aria-selected="true"]) { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -1528,7 +1594,7 @@ footer.shake { animation: eggShake .5s ease; }
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.2.3',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.2.2',   // 하단에 표시되는 버전
     ADMIN_KEY: 'saintyoung26',      // 불편사항 조회 비밀키
     LOG_PIN: '1357',        // 사용 로그 핀코드
     STATS_PIN: '2468'       // 이용 현황 비밀번호
