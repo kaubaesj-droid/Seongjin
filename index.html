@@ -1689,19 +1689,22 @@ footer.shake { animation: eggShake .5s ease; }
   display: block;
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, #ff8fb8, #ffb877, #ffe874, #8affb8, #74e8ff, #8a9cff, #cf9aff);
+  background: linear-gradient(90deg, #cf9aff, #8a9cff, #74e8ff, #8affb8, #ffe874, #ffb877, #ff8fb8);
   clip-path: inset(0 100% 0 0 round 999px);
   transition: clip-path 1s linear;
 }
-:root.rainbow .zbar-fill::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .65) 50%, transparent 70%);
-  background-size: 250% 100%;
-  animation: rbBarShine 2.6s ease-in-out infinite;
+
+/* ===== 종료 확인 시트의 '네, 종료합니다' 버튼도 파스텔 무지개 ===== */
+:root.rainbow .sheet .btn.danger {
+  background: linear-gradient(90deg, #ff8fb8, #ffb877, #ffe874, #8affb8, #74e8ff, #8a9cff, #cf9aff, #ff8fb8);
+  background-size: 200% 100%;
+  animation: rbFlow 4s linear infinite;
+  color: #1b1230;
+  text-shadow: none;
+  font-weight: 700;
+  border-color: rgba(255, 255, 255, .7);
+  box-shadow: 0 4px 18px rgba(200, 140, 255, .45), inset 0 1px 0 rgba(255, 255, 255, .75);
 }
-@keyframes rbBarShine { from { background-position: 150% 0; } to { background-position: -150% 0; } }
 </style>
 </head>
 <body>
