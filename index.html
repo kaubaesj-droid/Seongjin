@@ -1560,15 +1560,7 @@ footer.shake { animation: eggShake .5s ease; }
   animation: rbPulse 3.8s ease-in-out infinite;
 }
 
-/* 시트 · 드로어 스프링 */
-@keyframes rbSheetSpring {
-  0%   { transform: translateY(64px) scale(.95); opacity: 0; }
-  45%  { opacity: 1; }
-  62%  { transform: translateY(-9px) scale(1.012); }
-  80%  { transform: translateY(3px) scale(.998); }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
-}
-:root.rainbow .overlay.open .sheet { animation: rbSheetSpring .62s cubic-bezier(.22, 1, .36, 1) both; }
+/* 드로어 스프링 */
 :root.rainbow .drawer { transition: transform .6s cubic-bezier(.34, 1.28, .64, 1); }
 
 /* 글래스 토스트 */
@@ -1591,6 +1583,86 @@ footer.shake { animation: eggShake .5s ease; }
 }
 
 :root.rainbow[data-theme="dark"] { --spot-1: rgba(255, 255, 255, .22); --spot-2: rgba(150, 120, 255, .20); }
+
+/* ===== 무지개 테마 전용: 버튼 리플 · 검색창 글로우 · 로딩 스켈레톤 ===== */
+:root.rainbow { --rp-0: rgba(255, 255, 255, .75); --rp-1: rgba(160, 110, 255, .40); --rp-2: rgba(255, 150, 210, .24); --sk-a: rgba(255, 255, 255, .14); --sk-b: rgba(255, 255, 255, .62); }
+
+/* 버튼 리플 */
+:root.rainbow :is(.btn, .tab, .chip, .filter-btn, .log-filter-btn, .theme-toggle-btn, .menu-btn, .dr-item) {
+  position: relative;
+  overflow: hidden;
+}
+.rb-ripple {
+  position: absolute;
+  width: 20px; height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, var(--rp-0) 0%, var(--rp-1) 38%, var(--rp-2) 62%, transparent 74%);
+  transform: scale(0);
+  animation: rbRipple .7s cubic-bezier(.2, .7, .3, 1) forwards;
+}
+@keyframes rbRipple {
+  0%   { transform: scale(0); opacity: .95; }
+  100% { transform: scale(var(--rs, 8)); opacity: 0; }
+}
+
+/* 검색창 포커스 글로우 */
+@property --rbAng { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes rbAngle { to { --rbAng: 360deg; } }
+:root.rainbow .search-box { isolation: isolate; }
+:root.rainbow .search-box::before,
+:root.rainbow .search-box::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(var(--radius-sm) + 2px);
+  background: conic-gradient(from var(--rbAng), #ff3b30, #ff9500, #ffcc00, #34c759, #00c7be, #007aff, #af52de, #ff3b30);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease;
+  animation: rbAngle 3.2s linear infinite;
+}
+:root.rainbow .search-box::before {      /* 선명한 링 */
+  z-index: 2;
+  padding: 2px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+:root.rainbow .search-box::after {       /* 번지는 빛 */
+  z-index: -1;
+  inset: -3px;
+  filter: blur(12px);
+}
+:root.rainbow .search-box:focus-within::before { opacity: 1; }
+:root.rainbow .search-box:focus-within::after  { opacity: .5; }
+:root.rainbow .search-box input:focus {
+  border-color: transparent;
+  background-color: var(--glass-strong);
+}
+
+/* 로딩 스켈레톤 */
+:root.rainbow .card.sk { pointer-events: none; cursor: default; min-height: 128px; }
+:root.rainbow .card.sk .sk-line {
+  display: block;
+  height: 12px;
+  border-radius: 7px;
+  background: linear-gradient(100deg, var(--sk-a) 25%, var(--sk-b) 50%, var(--sk-a) 75%);
+  background-size: 220% 100%;
+  animation: rbShimmer 1.5s linear infinite;
+}
+:root.rainbow .card.sk .sk-line.pill { width: 38%; height: 18px; border-radius: 999px; }
+:root.rainbow .card.sk .sk-line.name { width: 62%; height: 18px; margin-top: 4px; }
+:root.rainbow .card.sk .sk-line.badge { width: 46%; height: 20px; border-radius: 999px; }
+:root.rainbow .card.sk .sk-line.bar { width: 100%; height: 8px; margin-top: auto; }
+@keyframes rbShimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+@media (prefers-color-scheme: dark) {
+  :root.rainbow:not([data-theme="light"]) { --rp-0: rgba(255, 255, 255, .32); --rp-1: rgba(150, 110, 255, .38); --rp-2: rgba(255, 120, 200, .22); --sk-a: rgba(255, 255, 255, .07); --sk-b: rgba(255, 255, 255, .26); }
+  
+}
+
+:root.rainbow[data-theme="dark"] { --rp-0: rgba(255, 255, 255, .32); --rp-1: rgba(150, 110, 255, .38); --rp-2: rgba(255, 120, 200, .22); --sk-a: rgba(255, 255, 255, .07); --sk-b: rgba(255, 255, 255, .26); }
 </style>
 </head>
 <body>
@@ -1701,7 +1773,7 @@ footer.shake { animation: eggShake .5s ease; }
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.2.1',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.2.2',   // 하단에 표시되는 버전
     ADMIN_KEY: 'saintyoung26',      // 불편사항 조회 비밀키
     LOG_PIN: '1357',        // 사용 로그 핀코드
     STATS_PIN: '2468'       // 이용 현황 비밀번호
@@ -1943,8 +2015,11 @@ footer.shake { animation: eggShake .5s ease; }
     });
   }
 
+  var stateLoaded = false;
+  setTimeout(function () { if (!stateLoaded) { stateLoaded = true; render(); } }, 6000);   // 연결이 늦어도 스켈레톤이 영원히 남지 않게
   const stateRef = ref(db, 'ott_state');
   onValue(stateRef, (snapshot) => {
+    stateLoaded = true;
     var prev = state;
     state = snapshot.val() || {};
     watchVanished(prev, state);
@@ -2191,6 +2266,18 @@ onValue(query(ref(db, 'announcement_logs'), limitToLast(200)), (snapshot) => {
   function render() {
     renderMyBanner();
     purge();
+    if (!stateLoaded && document.documentElement.classList.contains('rainbow')) {
+      var sg = document.getElementById('grid');
+      if (!sg.querySelector('.card.sk')) {
+        sg.textContent = '';
+        for (var i = 0; i < 6; i++) {
+          var sk = el('div', 'card sk');
+          ['pill', 'name', 'badge', 'bar'].forEach(function (c) { sk.appendChild(el('span', 'sk-line ' + c)); });
+          sg.appendChild(sk);
+        }
+      }
+      return;
+    }
     const activeGroup = OTT_GROUPS.find(g => g.id === currentCategory) || OTT_GROUPS[0];
     var q = searchQ();
     /* 검색은 프로필 이름과 서비스 이름만 대상으로 함 (사용자 이름은 검색하지 않음) */
@@ -4016,6 +4103,24 @@ function logEasterEgg(eventName) {
     }
     document.addEventListener('pointermove', onMove, { passive: true });
     document.addEventListener('pointerdown', onMove, { passive: true });
+  })();
+  /* 무지개 테마: 버튼 리플 */
+  (function () {
+    var SEL = '.btn,.tab,.chip,.filter-btn,.log-filter-btn,.theme-toggle-btn,.menu-btn,.dr-item,.card:not(.sk)';
+    document.addEventListener('pointerdown', function (e) {
+      if (!document.documentElement.classList.contains('rainbow')) return;
+      var t = e.target.closest && e.target.closest(SEL);
+      if (!t || t.disabled) return;
+      var r = t.getBoundingClientRect();
+      var d = Math.max(r.width, r.height);
+      var rp = document.createElement('span');
+      rp.className = 'rb-ripple';
+      rp.style.left = (e.clientX - r.left) + 'px';
+      rp.style.top = (e.clientY - r.top) + 'px';
+      rp.style.setProperty('--rs', (d * 2.6 / 20).toFixed(2));
+      t.appendChild(rp);
+      setTimeout(function () { if (rp.parentNode) rp.parentNode.removeChild(rp); }, 800);
+    }, { passive: true });
   })();
   renderTabs();
   render();
