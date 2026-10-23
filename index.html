@@ -1663,6 +1663,19 @@ footer.shake { animation: eggShake .5s ease; }
 }
 
 :root.rainbow[data-theme="dark"] { --rp-0: rgba(255, 255, 255, .32); --rp-1: rgba(150, 110, 255, .38); --rp-2: rgba(255, 120, 200, .22); --sk-a: rgba(255, 255, 255, .07); --sk-b: rgba(255, 255, 255, .26); }
+
+/* ===== 시트 안 확인 버튼 · 선택 칩: 배경 무지개와 같은 밝은 파스텔 톤 ===== */
+:root.rainbow .sheet .btn.primary,
+:root.rainbow .sheet .chip[aria-checked="true"],
+:root.rainbow .sheet .log-filter-btn[aria-checked="true"] {
+  background: linear-gradient(90deg, #ff8fb8, #ffb877, #ffe874, #8affb8, #74e8ff, #8a9cff, #cf9aff, #ff8fb8);
+  background-size: 200% 100%;
+  color: #1b1230;
+  text-shadow: none;
+  font-weight: 700;
+  border-color: rgba(255, 255, 255, .7);
+  box-shadow: 0 4px 18px rgba(200, 140, 255, .45), inset 0 1px 0 rgba(255, 255, 255, .75);
+}
 </style>
 </head>
 <body>
