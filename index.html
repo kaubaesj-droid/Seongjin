@@ -1676,6 +1676,32 @@ footer.shake { animation: eggShake .5s ease; }
   border-color: rgba(255, 255, 255, .7);
   box-shadow: 0 4px 18px rgba(200, 140, 255, .45), inset 0 1px 0 rgba(255, 255, 255, .75);
 }
+
+/* ===== 무지개 테마: 내 사용 진행바 — 파스텔 무지개가 점점 채워짐 ===== */
+.zbar-fill { display: none; }
+:root.rainbow .zbar {
+  background: var(--surface-sub);
+  box-shadow: inset 0 1px 3px rgba(60, 30, 110, .18);
+  height: 10px;
+}
+:root.rainbow .zbar-cover { display: none; }
+:root.rainbow .zbar-fill {
+  display: block;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #ff8fb8, #ffb877, #ffe874, #8affb8, #74e8ff, #8a9cff, #cf9aff);
+  clip-path: inset(0 100% 0 0 round 999px);
+  transition: clip-path 1s linear;
+}
+:root.rainbow .zbar-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .65) 50%, transparent 70%);
+  background-size: 250% 100%;
+  animation: rbBarShine 2.6s ease-in-out infinite;
+}
+@keyframes rbBarShine { from { background-position: 150% 0; } to { background-position: -150% 0; } }
 </style>
 </head>
 <body>
@@ -1786,7 +1812,7 @@ footer.shake { animation: eggShake .5s ease; }
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.2.0',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.2.2',   // 하단에 표시되는 버전
     ADMIN_KEY: 'saintyoung26',      // 불편사항 조회 비밀키
     LOG_PIN: '1357',        // 사용 로그 핀코드
     STATS_PIN: '2468'       // 이용 현황 비밀번호
@@ -3818,6 +3844,8 @@ document.getElementById('openNoticeBtn').addEventListener('click', openNoticeLog
 
     
     var bar = el('div', 'zbar');
+    var fill = el('div', 'zbar-fill'); fill.id = 'mcFill';   /* 무지개 테마용 채움 바 */
+    bar.appendChild(fill);
     var cover = el('div', 'zbar-cover'); cover.id = 'mcCover';
     bar.appendChild(cover);
     box.appendChild(bar);
@@ -3854,6 +3882,7 @@ document.getElementById('openNoticeBtn').addEventListener('click', openNoticeLog
     box.classList.add('z-' + zone);
     byId('mcRemain').textContent = remain(u.end) + ' 남음';
     byId('mcCover').style.width = leftPct + '%';
+    byId('mcFill').style.clipPath = 'inset(0 ' + leftPct + '% 0 0 round 999px)';
     byId('mcProg').innerHTML = (zone === 'ok' ? '' : WARN_SVG + ' ') + '진행률 ' + Math.round(100 - leftPct) + '%';
   }
 
