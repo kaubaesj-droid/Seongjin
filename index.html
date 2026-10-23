@@ -1484,6 +1484,50 @@ footer.shake { animation: eggShake .5s ease; }
 :root.rainbow[data-theme="dark"] .sheet,
 :root.rainbow[data-theme="dark"] .drawer { text-shadow: 0 1px 3px rgba(0, 0, 0, .45); }
 :root.rainbow[data-theme="dark"] .tab:not([aria-selected="true"]) { color: var(--muted); }
+
+/* ===== 이스터에그 전환 모션 v2 ===== */
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+:root.vt-back::view-transition-old(root) { z-index: 2; }
+:root.vt-back::view-transition-new(root) { z-index: 1; }
+
+.egg-glow {
+  position: fixed; inset: 0; z-index: 294; pointer-events: none;
+  animation: eggGlow .85s ease-out forwards;
+}
+@keyframes eggGlow { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
+
+.egg-ring {
+  position: fixed; z-index: 296; pointer-events: none;
+  width: 40px; height: 40px; margin: -20px 0 0 -20px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(transparent, transparent) padding-box,
+    conic-gradient(#ff3b30, #ff9500, #ffcc00, #34c759, #00c7be, #007aff, #af52de, #ff3b30) border-box;
+  box-shadow: 0 0 22px rgba(255, 255, 255, .55), 0 0 60px rgba(175, 82, 222, .35);
+  opacity: 0;
+  animation: eggRing 1.05s cubic-bezier(.2, .7, .2, 1) forwards;
+}
+.egg-ring.back { animation-name: eggRingIn; animation-timing-function: cubic-bezier(.6, 0, .3, 1); }
+@keyframes eggRing   { 0% { transform: scale(.2); opacity: .95; } 100% { transform: scale(var(--rs, 30)); opacity: 0; } }
+@keyframes eggRingIn { 0% { transform: scale(var(--rs, 30)); opacity: 0; } 25% { opacity: .9; } 100% { transform: scale(.2); opacity: 0; } }
+
+.egg-spark {
+  position: fixed; z-index: 297; pointer-events: none;
+  border-radius: 50%;
+  margin: -2px 0 0 -2px;
+  opacity: 0;
+  animation: eggSpark 1s cubic-bezier(.2, .8, .25, 1) forwards;
+}
+@keyframes eggSpark {
+  0%   { opacity: 0; transform: translate(var(--fx), var(--fy)) scale(.3); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .egg-glow, .egg-ring, .egg-spark { display: none; }
+}
 </style>
 </head>
 <body>
@@ -1594,7 +1638,7 @@ footer.shake { animation: eggShake .5s ease; }
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.2.1',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.2.2',   // 하단에 표시되는 버전
     ADMIN_KEY: 'saintyoung26',      // 불편사항 조회 비밀키
     LOG_PIN: '1357',        // 사용 로그 핀코드
     STATS_PIN: '2468'       // 이용 현황 비밀번호
@@ -3746,39 +3790,79 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
     footer.classList.add(cls);
   }
 
-  function sweep(on) {                    // 해금: →, 잠금: ← (색이 빠짐)
-    var s = document.createElement('div');
-    s.className = 'egg-sweep' + (on ? '' : ' off');
-    document.body.appendChild(s);
-    setTimeout(function () { s.remove(); }, 1300);
-  }
-
-  function grayFlash() {                  // 화면 전체 순간 흑백
-    var g = document.createElement('div');
-    g.className = 'egg-gray';
-    document.body.appendChild(g);
-    setTimeout(function () { g.remove(); }, 1000);
-  }
-
-  function burst() {                      // 해금: 폭죽
+  /* 푸터 위치에서 원형으로 테마가 퍼지는(또는 접히는) 전환 */
+  function origin() {
     var r = footer.getBoundingClientRect();
-    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    var set = ['🌈', '✨', '🎉', '⭐', '💫'];
-    for (var i = 0; i < 26; i++) {
-      var p = document.createElement('div');
-      p.className = 'egg-pop';
-      p.textContent = set[Math.floor(Math.random() * set.length)];
-      p.style.left = cx + 'px';
-      p.style.top = cy + 'px';
-      p.style.setProperty('--dx', ((Math.random() - 0.5) * window.innerWidth * 0.9) + 'px');
-      p.style.setProperty('--dy', (-(120 + Math.random() * window.innerHeight * 0.5)) + 'px');
-      p.style.setProperty('--rot', ((Math.random() - 0.5) * 720) + 'deg');
-      document.body.appendChild(p);
-      (function (e) { setTimeout(function () { e.remove(); }, 1400); })(p);
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+  function maxRadius(o) {
+    return Math.hypot(Math.max(o.x, window.innerWidth - o.x), Math.max(o.y, window.innerHeight - o.y));
+  }
+
+  function reveal(on, apply) {
+    if (reduced() || !document.startViewTransition) { apply(); return; }
+    var o = origin(), R = maxRadius(o);
+    root.classList.toggle('vt-back', !on);
+    var vt = document.startViewTransition(apply);
+    vt.ready.then(function () {
+      var c0 = 'circle(0px at ' + o.x + 'px ' + o.y + 'px)';
+      var c1 = 'circle(' + R + 'px at ' + o.x + 'px ' + o.y + 'px)';
+      root.animate(
+        { clipPath: on ? [c0, c1] : [c1, c0] },
+        { duration: 1000, easing: 'cubic-bezier(.65, 0, .2, 1)', fill: 'forwards',
+          pseudoElement: on ? '::view-transition-new(root)' : '::view-transition-old(root)' }
+      );
+    }).catch(function () {});
+    vt.finished.then(function () { root.classList.remove('vt-back'); },
+                     function () { root.classList.remove('vt-back'); });
+  }
+
+  /* 충격파 링 + 빛 번쩍임 + 반짝이 입자 */
+  function effects(on) {
+    var o = origin(), R = maxRadius(o);
+    var glow = document.createElement('div');
+    glow.className = 'egg-glow';
+    glow.style.background = 'radial-gradient(circle at ' + o.x + 'px ' + o.y + 'px, rgba(255,255,255,.75), rgba(255,255,255,0) 45%)';
+    document.body.appendChild(glow);
+    setTimeout(function () { glow.remove(); }, 900);
+
+    for (var i = 0; i < 3; i++) {
+      (function (i) {
+        var ring = document.createElement('div');
+        ring.className = 'egg-ring' + (on ? '' : ' back');
+        ring.style.left = o.x + 'px';
+        ring.style.top = o.y + 'px';
+        ring.style.setProperty('--rs', (R * 2 / 40) * (1 - i * 0.12));
+        ring.style.animationDelay = (i * 110) + 'ms';
+        document.body.appendChild(ring);
+        setTimeout(function () { ring.remove(); }, 1400 + i * 110);
+      })(i);
+    }
+
+    var colors = ['#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#00c7be', '#5ac8fa', '#af52de', '#ff6eb4'];
+    for (var k = 0; k < 40; k++) {
+      var sp = document.createElement('div');
+      sp.className = 'egg-spark';
+      var ang = Math.random() * Math.PI * 2;
+      var dist = 90 + Math.random() * Math.min(360, R * 0.55);
+      var ex = Math.cos(ang) * dist, ey = Math.sin(ang) * dist;
+      var c = colors[k % colors.length];
+      var sz = 3 + Math.random() * 5;
+      sp.style.left = o.x + 'px';
+      sp.style.top = o.y + 'px';
+      sp.style.width = sp.style.height = sz + 'px';
+      sp.style.background = c;
+      sp.style.boxShadow = '0 0 ' + (sz * 2.5) + 'px ' + c + ', 0 0 ' + (sz * 5) + 'px ' + c;
+      sp.style.setProperty('--fx', (on ? 0 : ex) + 'px');
+      sp.style.setProperty('--fy', (on ? 0 : ey) + 'px');
+      sp.style.setProperty('--tx', (on ? ex : 0) + 'px');
+      sp.style.setProperty('--ty', (on ? ey : 0) + 'px');
+      sp.style.animationDelay = (Math.random() * 180) + 'ms';
+      sp.style.animationDuration = (800 + Math.random() * 500) + 'ms';
+      document.body.appendChild(sp);
+      (function (e) { setTimeout(function () { e.remove(); }, 1700); })(sp);
     }
   }
-
-  
 
   function buzz(pattern) {                // 진동 (지원하는 기기만)
     if (navigator.vibrate) navigator.vibrate(pattern);
@@ -3816,19 +3900,23 @@ function logEasterEgg(eventName) {
     if (item.hidden) {
       // 잠금 → 해금 (무지개 테마도 바로 적용)
       logEasterEgg('rainbow_unlock');
-      item.hidden = false;
-      sset(UNLOCK_KEY, '1');
-      setRainbow(true);
-      if (!reduced()) { restart('tap'); sweep(true); burst(); }
+      reveal(true, function () {
+        item.hidden = false;
+        sset(UNLOCK_KEY, '1');
+        setRainbow(true);
+      });
+      if (!reduced()) { restart('tap'); effects(true); }
       buzz([40, 60, 40]);
       toast('무지개 테마가 켜졌어요! 메뉴에서 끌 수 있어요');
     } else {
       // 해금 → 잠금 (무지개도 끄고 초기 상태로)
       logEasterEgg('rainbow_lock');
-      setRainbow(false);
-      item.hidden = true;
-      sset(UNLOCK_KEY, '0');
-      if (!reduced()) { restart('shake'); sweep(false); grayFlash();  }
+      reveal(false, function () {
+        setRainbow(false);
+        item.hidden = true;
+        sset(UNLOCK_KEY, '0');
+      });
+      if (!reduced()) { restart('tap'); effects(false); }
       buzz([60, 40, 60]);
       toast('무지개 메뉴를 다시 숨겼어요');
     }
