@@ -1531,6 +1531,66 @@ footer.shake { animation: eggShake .5s ease; }
 /* 전환 중 상단이 비어 보이지 않도록 스냅샷 뒤 배경 고정 */
 ::view-transition { background: transparent; }
 ::view-transition-group(root) { animation: none; }
+
+/* ===== 무지개 테마 전용: 카드 스포트라이트 · 사용중 펄스 · 시트 스프링 · 글래스 토스트 ===== */
+:root.rainbow { --spot-1: rgba(255, 255, 255, .85); --spot-2: rgba(190, 150, 255, .20); }
+
+/* 1) 카드 위를 따라다니는 빛 반사 */
+:root.rainbow .card:hover {
+  background-image:
+    radial-gradient(210px circle at var(--mx, 50%) var(--my, 50%), var(--spot-1), var(--spot-2) 45%, transparent 72%),
+    linear-gradient(135deg, var(--glass-hl), rgba(255, 255, 255, .03) 60%);
+  border-color: rgba(255, 255, 255, .85);
+}
+
+/* 3) 사용 중 카드 숨쉬기 */
+@keyframes rbPulse {
+  0%, 100% { box-shadow: var(--shadow-sm), var(--glass-edge), 0 0 0 0 rgba(var(--pulse), 0); }
+  50%      { box-shadow: var(--shadow-sm), var(--glass-edge), 0 0 22px 2px rgba(var(--pulse), .40); }
+}
+:root.rainbow .card.busy {
+  --pulse: 244, 63, 94;
+  border-color: rgba(244, 63, 94, .38);
+  animation: rbPulse 3.8s ease-in-out infinite;
+}
+:root.rainbow .card.busy:hover { border-color: rgba(244, 63, 94, .6); }
+:root.rainbow .mine-card.show {
+  --pulse: 59, 130, 246;
+  border-color: rgba(var(--pulse), .45);
+  animation: rbPulse 3.8s ease-in-out infinite;
+}
+
+/* 시트 · 드로어 스프링 */
+@keyframes rbSheetSpring {
+  0%   { transform: translateY(64px) scale(.95); opacity: 0; }
+  45%  { opacity: 1; }
+  62%  { transform: translateY(-9px) scale(1.012); }
+  80%  { transform: translateY(3px) scale(.998); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+:root.rainbow .overlay.open .sheet { animation: rbSheetSpring .62s cubic-bezier(.22, 1, .36, 1) both; }
+:root.rainbow .drawer { transition: transform .6s cubic-bezier(.34, 1.28, .64, 1); }
+
+/* 글래스 토스트 */
+:root.rainbow .egg-toast {
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, #ff3b30, #ff9500, #ffcc00, #34c759, #00c7be, #007aff, #af52de) bottom / 100% 2px no-repeat,
+    linear-gradient(135deg, var(--glass-hl), rgba(255, 255, 255, .03)),
+    var(--glass-strong);
+  border: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: var(--shadow-md), var(--glass-edge);
+  text-shadow: none;
+  transition: opacity .3s ease, transform .5s cubic-bezier(.34, 1.4, .64, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root.rainbow:not([data-theme="light"]) { --spot-1: rgba(255, 255, 255, .22); --spot-2: rgba(150, 120, 255, .20); }
+  
+}
+
+:root.rainbow[data-theme="dark"] { --spot-1: rgba(255, 255, 255, .22); --spot-2: rgba(150, 120, 255, .20); }
 </style>
 </head>
 <body>
@@ -1641,7 +1701,7 @@ footer.shake { animation: eggShake .5s ease; }
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.2.0',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.2.2',   // 하단에 표시되는 버전
     ADMIN_KEY: 'saintyoung26',      // 불편사항 조회 비밀키
     LOG_PIN: '1357',        // 사용 로그 핀코드
     STATS_PIN: '2468'       // 이용 현황 비밀번호
@@ -3937,6 +3997,26 @@ function logEasterEgg(eventName) {
     }, 2200);
   }
 })();
+  /* 무지개 테마: 카드 위 포인터 위치를 따라가는 빛 반사 */
+  (function () {
+    var raf = 0, ex = 0, ey = 0, et = null;
+    function apply() {
+      raf = 0;
+      if (!et) return;
+      var card = et.closest && et.closest('.card');
+      if (!card) return;
+      var r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', (ex - r.left) + 'px');
+      card.style.setProperty('--my', (ey - r.top) + 'px');
+    }
+    function onMove(e) {
+      if (!document.documentElement.classList.contains('rainbow')) return;
+      ex = e.clientX; ey = e.clientY; et = e.target;
+      if (!raf) raf = requestAnimationFrame(apply);
+    }
+    document.addEventListener('pointermove', onMove, { passive: true });
+    document.addEventListener('pointerdown', onMove, { passive: true });
+  })();
   renderTabs();
   render();
   recordVisit();
