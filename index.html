@@ -137,7 +137,7 @@
   main {
     max-width: 680px;
     margin: 0 auto;
-    padding: 32px 20px 32px;
+    padding: 16px 20px 32px;
   }
 
   /* Header Section */
@@ -1996,7 +1996,7 @@ h1 {
   background: linear-gradient(90deg, var(--free) 0 60%, var(--warn) 60% 85%, var(--busy) 85% 100%);
   box-shadow: none;
 }
-:root.rainbow.mono .zbar-cover { display: block; background: var(--rb-base); }
+:root.rainbow.mono .zbar-cover { display: block; background: rgba(205, 213, 230, .82); }
 :root.rainbow.mono .zbar-fill { display: none; }
 
 /* 검색창 포커스 링 · 시트 그림자 · 토스트 밑줄 */
@@ -2077,15 +2077,17 @@ footer.tap { animation: none; }
 :root { --cbar-h: calc(52px + env(safe-area-inset-top, 0px)); }
 
 /* 펼친 상태: 버튼은 위 줄 오른쪽, 큰 제목은 그 아래 */
-.header-area { flex-wrap: wrap; align-items: flex-end; }
-.header-area .header-btns {
-  order: -1;
+.header-area { flex-wrap: wrap; align-items: center; }
+ .header-area .header-btns {
+  order: 0;
   width: 100%;
   justify-content: flex-end;
-  margin-bottom: 8px;
+  margin: 8px 0 0;
   opacity: calc(1 - var(--hp, 0) * 1.6);
 }
 .header-area h1 {
+  order: -1;
+  width: 100%;
   font-size: 2rem;
   line-height: 1.2;
   letter-spacing: -0.03em;
