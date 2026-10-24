@@ -1734,9 +1734,439 @@ footer.shake { animation: eggShake .5s ease; }
   text-shadow: none;
   box-shadow: 0 3px 12px rgba(200, 140, 255, .40), inset 0 1px 0 rgba(255, 255, 255, .75);
 }
+
+/* ===== 무지개 테마: 메뉴/시트 열면 뒤 화면 블러 + 시간 선택 창 유리 효과 ===== */
+/* 오버레이 자체에 backdrop-filter를 걸면 안쪽 시트의 유리 블러가 죽으므로, 블러는 별도 레이어(::before)로 분리 */
+:root.rainbow .overlay::before,
+:root.rainbow .drawer-ov::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+:root.rainbow .sheet { position: relative; z-index: 1; }
+:root.rainbow .drawer { z-index: 1; }
+
+/* 시트(시간 선택 창 포함): 더 투명한 유리 + 밝은 테두리 */
+:root.rainbow {
+  --sheet-bg: rgba(255, 255, 255, .34);
+  --sheet-hl: rgba(255, 255, 255, .62);
+  --sheet-line: rgba(255, 255, 255, .78);
+  --sheet-inner: rgba(255, 255, 255, .30);
+  --sheet-inner-line: rgba(255, 255, 255, .62);
+}
+@media (prefers-color-scheme: dark) {
+  :root.rainbow:not([data-theme="light"]) {
+    --sheet-bg: rgba(24, 18, 50, .46);
+    --sheet-hl: rgba(255, 255, 255, .20);
+    --sheet-line: rgba(255, 255, 255, .30);
+    --sheet-inner: rgba(255, 255, 255, .10);
+    --sheet-inner-line: rgba(255, 255, 255, .24);
+  }
+}
+:root.rainbow[data-theme="dark"] {
+  --sheet-bg: rgba(24, 18, 50, .46);
+  --sheet-hl: rgba(255, 255, 255, .20);
+  --sheet-line: rgba(255, 255, 255, .30);
+  --sheet-inner: rgba(255, 255, 255, .10);
+  --sheet-inner-line: rgba(255, 255, 255, .24);
+}
+:root.rainbow .sheet {
+  background-image:
+    linear-gradient(135deg, var(--sheet-hl), rgba(255, 255, 255, .04) 48%, rgba(255, 255, 255, .0) 70%),
+    radial-gradient(120% 60% at 0% 0%, rgba(255, 255, 255, .28), transparent 60%);
+  background-color: var(--sheet-bg);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid var(--sheet-line);
+  box-shadow:
+    0 20px 60px rgba(100, 60, 190, .28),
+    inset 0 1px 0 rgba(255, 255, 255, .8),
+    inset 0 -1px 0 rgba(255, 255, 255, .18);
+}
+/* 시트 안쪽 칩 · 입력창 · 취소 버튼: 얇은 유리 조각처럼 */
+:root.rainbow .sheet .chip:not([aria-checked="true"]),
+:root.rainbow .sheet input[type="text"],
+:root.rainbow .sheet input[type="password"],
+:root.rainbow .sheet textarea,
+:root.rainbow .sheet .btn:not(.primary):not(.danger):not(.extend) {
+  background-color: var(--sheet-inner);
+  border: 1px solid var(--sheet-inner-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45);
+}
+
+/* ===== 무지개 테마: 상단 필터(전체/사용 가능/사용 중) 물방울 슬라이드 ===== */
+.rb-drop { display: none; }
+:root.rainbow #filterBar { position: relative; }
+:root.rainbow #filterBar.rb-drop-on .rb-drop {
+  display: block;
+  position: absolute;
+  top: 0; left: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff8fb8, #ffb877, #ffe874, #8affb8, #74e8ff, #8a9cff, #cf9aff, #ff8fb8);
+  background-size: 200% 100%;
+  animation: rbFlow 4s linear infinite;
+  box-shadow:
+    0 4px 16px rgba(200, 140, 255, .45),
+    inset 0 1px 0 rgba(255, 255, 255, .85),
+    inset 0 -3px 6px rgba(255, 255, 255, .25);
+  will-change: transform, width;
+}
+:root.rainbow #filterBar.rb-drop-on .rb-drop::after {   /* 물방울 하이라이트 */
+  content: "";
+  position: absolute;
+  left: 14%; right: 14%; top: 2px; height: 38%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .75), rgba(255, 255, 255, 0));
+}
+:root.rainbow #filterBar.rb-drop-on .filter-btn { position: relative; z-index: 1; }
+:root.rainbow #filterBar.rb-drop-on .filter-btn[aria-checked="true"] {
+  background: transparent;
+  animation: none;
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root.rainbow #filterBar.rb-drop-on .rb-drop { animation: none; }
+}
+
+/* ===== 제목 5연타용: 눌리는 느낌/선택/하이라이트 없음 ===== */
+h1 {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  cursor: default;
+}
+
+/* ===== 모노 글래스 테마: 무지개 테마와 같은 디자인에서 무지개 색만 뺀 버전 (class: rainbow + mono) ===== */
+.egg-ring.mono {
+  background:
+    linear-gradient(transparent, transparent) padding-box,
+    conic-gradient(#ffffff, #98a1bb, #ffffff, #98a1bb, #ffffff) border-box;
+}
+
+:root.rainbow.mono {
+  --rb-base: #f2f3f7;
+  --overlay: rgba(25, 30, 48, .22);
+  --shadow-sm: 0 4px 16px rgba(40, 50, 80, .10);
+  --shadow-md: 0 14px 40px rgba(40, 50, 80, .20);
+  --spot-2: rgba(150, 160, 190, .20);
+  --rp-1: rgba(110, 120, 150, .34);
+  --rp-2: rgba(170, 180, 200, .22);
+  --mn-bg: linear-gradient(135deg, rgba(255, 255, 255, .88), rgba(255, 255, 255, .42));
+  --mn-ink: #1b2236;
+  --mn-edge: rgba(255, 255, 255, .95);
+  --mn-shadow: 0 4px 14px rgba(40, 50, 80, .20), inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 -1px 0 rgba(255, 255, 255, .45);
+  --mn-ring: #6b748c, #ffffff, #b6bdd0, #6b748c;
+  --mn-line: rgba(90, 100, 130, .6);
+  --mn-sheet-shadow: 0 20px 60px rgba(30, 40, 70, .28);
+  --mn-c1: #ffffff; --mn-c2: #cfd5e4; --mn-c3: #f4f5f9; --mn-c4: #aab3c8;
+  --mn-g1: rgba(255, 255, 255, .55); --mn-g2: rgba(200, 210, 235, .40);
+  --mn-g3: rgba(255, 255, 255, .45); --mn-g4: rgba(180, 190, 215, .38);
+}
+@media (prefers-color-scheme: dark) {
+  :root.rainbow.mono:not([data-theme="light"]) {
+    --rb-base: #0a0b10;
+    --overlay: rgba(0, 0, 8, .45);
+    --surface: rgba(20, 22, 32, .58);
+    --info-bg: rgba(20, 22, 32, .5);
+    --glass-strong: rgba(14, 16, 24, .84);
+    --sheet-bg: rgba(22, 24, 34, .46);
+    --spot-2: rgba(170, 180, 210, .18);
+    --rp-1: rgba(200, 210, 240, .30);
+    --rp-2: rgba(160, 170, 200, .20);
+    --mn-bg: linear-gradient(135deg, rgba(255, 255, 255, .30), rgba(255, 255, 255, .10));
+    --mn-ink: #ffffff;
+    --mn-edge: rgba(255, 255, 255, .45);
+    --mn-shadow: 0 4px 16px rgba(0, 0, 0, .40), inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -1px 0 rgba(255, 255, 255, .12);
+    --mn-ring: #e6eaf7, #6b7390, #b4bbd2, #e6eaf7;
+    --mn-line: rgba(255, 255, 255, .55);
+    --mn-sheet-shadow: 0 20px 60px rgba(0, 0, 0, .45);
+    --mn-c1: #5b6380; --mn-c2: #2a2f45; --mn-c3: #7b84a3; --mn-c4: #1c2030;
+    --mn-g1: rgba(120, 130, 170, .16); --mn-g2: rgba(90, 110, 160, .16);
+    --mn-g3: rgba(110, 120, 150, .12); --mn-g4: rgba(130, 140, 190, .18);
+  }
+}
+:root.rainbow.mono[data-theme="dark"] {
+  --rb-base: #0a0b10;
+  --overlay: rgba(0, 0, 8, .45);
+  --surface: rgba(20, 22, 32, .58);
+  --info-bg: rgba(20, 22, 32, .5);
+  --glass-strong: rgba(14, 16, 24, .84);
+  --sheet-bg: rgba(22, 24, 34, .46);
+  --spot-2: rgba(170, 180, 210, .18);
+  --rp-1: rgba(200, 210, 240, .30);
+  --rp-2: rgba(160, 170, 200, .20);
+  --mn-bg: linear-gradient(135deg, rgba(255, 255, 255, .30), rgba(255, 255, 255, .10));
+  --mn-ink: #ffffff;
+  --mn-edge: rgba(255, 255, 255, .45);
+  --mn-shadow: 0 4px 16px rgba(0, 0, 0, .40), inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -1px 0 rgba(255, 255, 255, .12);
+  --mn-ring: #e6eaf7, #6b7390, #b4bbd2, #e6eaf7;
+  --mn-line: rgba(255, 255, 255, .55);
+  --mn-sheet-shadow: 0 20px 60px rgba(0, 0, 0, .45);
+  --mn-c1: #5b6380; --mn-c2: #2a2f45; --mn-c3: #7b84a3; --mn-c4: #1c2030;
+  --mn-g1: rgba(120, 130, 170, .16); --mn-g2: rgba(90, 110, 160, .16);
+  --mn-g3: rgba(110, 120, 150, .12); --mn-g4: rgba(130, 140, 190, .18);
+}
+
+/* 배경: 무지개 → 은은한 회색빛 */
+:root.rainbow.mono body::before {
+  background: conic-gradient(from 0deg at 50% 50%, var(--mn-c1), var(--mn-c2), var(--mn-c3), var(--mn-c4), var(--mn-c1));
+}
+:root.rainbow.mono body::after {
+  background:
+    radial-gradient(2px 2px at 18% 28%, #fff, transparent 70%),
+    radial-gradient(2px 2px at 72% 14%, #fff, transparent 70%),
+    radial-gradient(3px 3px at 86% 58%, #fff, transparent 70%),
+    radial-gradient(2px 2px at 34% 76%, #fff, transparent 70%),
+    radial-gradient(3px 3px at 58% 42%, #fff, transparent 70%),
+    radial-gradient(2px 2px at 8% 88%, #fff, transparent 70%),
+    radial-gradient(42vmax 42vmax at 14% 8%, var(--mn-g1), transparent 62%),
+    radial-gradient(46vmax 46vmax at 92% 24%, var(--mn-g2), transparent 62%),
+    radial-gradient(50vmax 50vmax at 28% 96%, var(--mn-g3), transparent 62%),
+    radial-gradient(42vmax 42vmax at 86% 92%, var(--mn-g4), transparent 62%);
+}
+
+/* 제목 */
+:root.rainbow.mono h1 {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: var(--ink);
+  animation: none;
+  filter: none;
+}
+
+/* 선택된 탭 · 칩 · 필터 · 확인 버튼: 무지개 → 모노 (라이트: 짙은 그래파이트 / 다크: 은백색) */
+:root.rainbow.mono .tab[aria-selected="true"],
+:root.rainbow.mono .chip[aria-checked="true"],
+:root.rainbow.mono .log-filter-btn[aria-checked="true"],
+:root.rainbow.mono .btn.primary,
+:root.rainbow.mono .filter-bar .filter-btn[aria-checked="true"],
+:root.rainbow.mono .sheet .btn.primary,
+:root.rainbow.mono .sheet .chip[aria-checked="true"],
+:root.rainbow.mono .sheet .log-filter-btn[aria-checked="true"] {
+  background: var(--mn-bg);
+  background-size: auto;
+  animation: none;
+  color: var(--mn-ink);
+  text-shadow: none;
+  font-weight: 700;
+  border-color: var(--mn-edge);
+  box-shadow: var(--mn-shadow);
+  -webkit-backdrop-filter: blur(12px) saturate(170%);
+  backdrop-filter: blur(12px) saturate(170%);
+}
+/* 종료 확인 버튼: 원래의 빨간 위험 버튼 */
+:root.rainbow.mono .sheet .btn.danger {
+  background: var(--busy-bg);
+  background-size: auto;
+  animation: none;
+  color: var(--busy);
+  text-shadow: none;
+  font-weight: 600;
+  border-color: transparent;
+  box-shadow: none;
+}
+/* 필터 물방울 */
+:root.rainbow.mono #filterBar.rb-drop-on .rb-drop {
+  background: var(--mn-bg);
+  background-size: auto;
+  animation: none;
+  box-shadow: var(--mn-shadow);
+}
+
+/* 카드 진행바 · 내 사용 진행바: 원래 색(초록/주황/빨강)으로 */
+:root.rainbow.mono .bar > i { background: var(--free); background-size: auto; animation: none; }
+:root.rainbow.mono .bar.mid > i { background: #f59e0b; background-size: auto; animation: none; }
+:root.rainbow.mono .bar.low > i { background: var(--busy); background-size: auto; animation: none; }
+:root.rainbow.mono .zbar {
+  background: linear-gradient(90deg, var(--free) 0 60%, var(--warn) 60% 85%, var(--busy) 85% 100%);
+  box-shadow: none;
+}
+:root.rainbow.mono .zbar-cover { display: block; }
+:root.rainbow.mono .zbar-fill { display: none; }
+
+/* 검색창 포커스 링 · 시트 그림자 · 토스트 밑줄 */
+:root.rainbow.mono .search-box::before,
+:root.rainbow.mono .search-box::after {
+  background: conic-gradient(from var(--rbAng), var(--mn-ring));
+}
+:root.rainbow.mono .sheet {
+  box-shadow: var(--mn-sheet-shadow), inset 0 1px 0 rgba(255, 255, 255, .8), inset 0 -1px 0 rgba(255, 255, 255, .18);
+}
+:root.rainbow.mono .egg-toast {
+  background:
+    linear-gradient(90deg, transparent, var(--mn-line), transparent) bottom / 100% 2px no-repeat,
+    linear-gradient(135deg, var(--glass-hl), rgba(255, 255, 255, .03)),
+    var(--glass-strong);
+}
+.dr-ic.gl { background: linear-gradient(135deg, #ffffff, #b8c0d6); color: #27304a; }
+.dr-sec[hidden] { display: none; }
+
+/* ===== 필터 물방울 잔상 제거 (무지개/유리 공통) ===== */
+/* 버튼의 배경·그림자·블러가 서서히 사라지며 남는 잔상을 막고, 글자색만 부드럽게 전환 */
+:root.rainbow #filterBar.rb-drop-on .filter-btn { transition: color .25s ease; }
+:root.rainbow.mono #filterBar.rb-drop-on .filter-btn,
+:root.rainbow.mono #filterBar.rb-drop-on .filter-btn[aria-checked="true"] {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+/* ===== 유리 테마: 선택된 OTT 탭이 확실히 구분되도록 ===== */
+:root.rainbow.mono {
+  --mn-tab-bg: linear-gradient(135deg, rgba(38, 46, 74, .90), rgba(38, 46, 74, .72));
+  --mn-tab-ink: #ffffff;
+  --mn-tab-edge: rgba(255, 255, 255, .55);
+  --mn-tab-shadow: 0 3px 8px rgba(38, 46, 74, .30), inset 0 1px 0 rgba(255, 255, 255, .30);
+}
+@media (prefers-color-scheme: dark) {
+  :root.rainbow.mono:not([data-theme="light"]) {
+    --mn-tab-bg: linear-gradient(135deg, rgba(255, 255, 255, .46), rgba(255, 255, 255, .24));
+    --mn-tab-ink: #ffffff;
+    --mn-tab-edge: rgba(255, 255, 255, .90);
+    --mn-tab-shadow: 0 0 0 1px rgba(255, 255, 255, .25), 0 3px 10px rgba(0, 0, 0, .40), inset 0 1px 0 rgba(255, 255, 255, .65);
+  }
+}
+:root.rainbow.mono[data-theme="dark"] {
+  --mn-tab-bg: linear-gradient(135deg, rgba(255, 255, 255, .46), rgba(255, 255, 255, .24));
+  --mn-tab-ink: #ffffff;
+  --mn-tab-edge: rgba(255, 255, 255, .90);
+  --mn-tab-shadow: 0 0 0 1px rgba(255, 255, 255, .25), 0 3px 10px rgba(0, 0, 0, .40), inset 0 1px 0 rgba(255, 255, 255, .65);
+}
+:root.rainbow.mono .tab[aria-selected="true"] {
+  background: var(--mn-tab-bg);
+  color: var(--mn-tab-ink);
+  border-color: var(--mn-tab-edge);
+  box-shadow: var(--mn-tab-shadow);
+  font-weight: 700;
+}
+
+/* 탭 줄은 가로 스크롤 영역이라 그림자가 네모로 잘려 보였음: 안쪽 여백을 늘리고 바깥 여백으로 상쇄 */
+:root.rainbow .tabs {
+  padding: 10px 8px 16px;
+  margin: -10px -8px 0;
+}
+
+/* 푸터: 눌림 느낌 없음 (탭 하이라이트 · 글자 선택 · 더블탭 확대 제거) */
+footer {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  cursor: default;
+}
+footer.tap { animation: none; }
+
+/* ===== 큰 제목이 접히는 헤더 (모든 테마 공통) ===== */
+:root { --cbar-h: calc(52px + env(safe-area-inset-top, 0px)); }
+
+/* 펼친 상태: 버튼은 위 줄 오른쪽, 큰 제목은 그 아래 */
+.header-area { flex-wrap: wrap; align-items: flex-end; }
+.header-area .header-btns {
+  order: -1;
+  width: 100%;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+  opacity: calc(1 - var(--hp, 0) * 1.6);
+}
+.header-area h1 {
+  font-size: 2rem;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  opacity: calc(1 - var(--hp, 0));
+}
+
+/* 접힌 상태: 스크롤하면 위에 고정되어 나타나는 작은 제목 바 */
+.cbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 60;
+  height: var(--cbar-h);
+  padding-top: env(safe-area-inset-top, 0px);
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid var(--line);
+  opacity: var(--hp, 0);
+  transform: translateY(calc((1 - var(--hp, 0)) * -10px));
+  visibility: hidden;
+  pointer-events: none;
+}
+.cbar.on { visibility: visible; pointer-events: auto; }
+.cbar-in {
+  max-width: 680px;
+  height: 52px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cbar-title {
+  min-width: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+.cbar-btns { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.cbar .menu-btn { width: 34px; height: 34px; }
+.cbar .menu-btn svg { width: 18px; height: 18px; }
+.cbar .theme-toggle-btn { padding: 6px 12px; }
+
+/* 내 사용 중 배너가 접힌 바에 가려지지 않도록 */
+.my-banner { top: calc(var(--cbar-h) + 8px); }
+
+/* 무지개 / 유리 테마 */
+:root.rainbow .cbar {
+  background: color-mix(in srgb, var(--rb-base) 55%, transparent);
+}
+:root.rainbow .cbar-title {
+  background: linear-gradient(90deg, #ff8fb8, #ffb877, #ffe874, #8affb8, #74e8ff, #8a9cff, #cf9aff, #ff8fb8);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rbFlow 4s linear infinite;
+  filter: drop-shadow(0 1px 2px rgba(90, 50, 150, .35));
+}
+:root.rainbow.mono .cbar-title {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: var(--ink);
+  animation: none;
+  filter: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root.rainbow .cbar-title { animation: none; }
+}
 </style>
 </head>
 <body>
+<div class="cbar" id="cbar">
+  <div class="cbar-in">
+    <span class="cbar-title">세인영 OTT 공유 현황</span>
+    <div class="cbar-btns">
+      <button type="button" class="theme-toggle-btn" aria-label="테마 변경"><span class="cbar-label">야간 모드</span></button>
+      <button type="button" class="menu-btn" aria-label="메뉴 열기"></button>
+    </div>
+  </div>
+</div>
 <main>
   <div class="notice" id="notice" hidden></div>
     <div class="header-area">
@@ -1803,16 +2233,22 @@ footer.shake { animation: eggShake .5s ease; }
       <span class="dr-tx"><b>야간 모드</b></span>
             <button type="button" class="switch" id="themeSwitch" role="switch" aria-checked="false" aria-label="야간 모드"></button>
     </div>
-    <div class="dr-item" id="rainbowItem" hidden>
-      <span class="dr-ic rb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 18a9 9 0 0 1 18 0M7 18a5 5 0 0 1 10 0"/></svg></span>
-      <span class="dr-tx"><b>무지개 테마</b><small>숨겨진 메뉴를 찾았어요</small></span>
-      <button type="button" class="switch" id="rainbowSwitch" role="switch" aria-checked="false" aria-label="무지개 테마"></button>
-    </div>
     <button type="button" class="dr-item dr-nav" id="openContactBtn">
       <span class="dr-ic plain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>
       <span class="dr-tx"><b>관리자 문의</b></span>
       <span class="dr-arrow">↗</span>
     </button>
+    <div class="dr-sec" id="eggSec" hidden>성진의 이스터에그</div>
+    <div class="dr-item" id="rainbowItem" hidden>
+      <span class="dr-ic rb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 18a9 9 0 0 1 18 0M7 18a5 5 0 0 1 10 0"/></svg></span>
+      <span class="dr-tx"><b>무지개 테마</b><small>숨겨진 메뉴를 찾았어요</small></span>
+      <button type="button" class="switch" id="rainbowSwitch" role="switch" aria-checked="false" aria-label="무지개 테마"></button>
+    </div>
+    <div class="dr-item" id="glassItem" hidden>
+      <span class="dr-ic gl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5c3.4 4 6 7 6 10.2a6 6 0 0 1-12 0C6 10.5 8.6 7.500 12 3.5z"/></svg></span>
+      <span class="dr-tx"><b>유리 테마</b><small>숨겨진 메뉴를 찾았어요</small></span>
+      <button type="button" class="switch" id="glassSwitch" role="switch" aria-checked="false" aria-label="유리 테마"></button>
+    </div>
   </aside>
 </div>
 <div class="overlay" id="overlay" aria-hidden="true">
@@ -3979,14 +4415,28 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
 (function () {
   var RB_KEY = 'ott-board-rainbow';              // 켜짐 상태
   var UNLOCK_KEY = 'ott-board-rainbow-unlocked'; // 메뉴 해금 여부
+  var MONO_KEY = 'ott-board-mono';               // 모노 테마 켜짐 상태 (제목 5연타)
+  var MONO_FROM_RB = 'ott-board-mono-from-rb';   // 모노로 들어가기 전에 무지개가 켜져 있었는지
+  var GLASS_UNLOCK_KEY = 'ott-board-glass-unlocked'; // 유리 테마 메뉴 해금 여부 (제목 5연타)
   var root = document.documentElement;
   var footer = document.querySelector('footer');
   var item = document.getElementById('rainbowItem');
   var sw = document.getElementById('rainbowSwitch');
-  if (!footer || !item || !sw) return;
+  var glassItem = document.getElementById('glassItem');
+  var glassSw = document.getElementById('glassSwitch');
+  var eggSec = document.getElementById('eggSec');
+  if (!footer || !item || !sw || !glassItem || !glassSw || !eggSec) return;
+
+  // '성진의 이스터에그' 소제목: 안의 메뉴가 하나라도 보일 때만 표시
+  function syncEggSec() { eggSec.hidden = item.hidden && glassItem.hidden; }
+  new MutationObserver(syncEggSec).observe(item, { attributes: true, attributeFilter: ['hidden'] });
+  new MutationObserver(syncEggSec).observe(glassItem, { attributes: true, attributeFilter: ['hidden'] });
+  function syncGlassSwitch() { glassSw.setAttribute('aria-checked', root.classList.contains('mono') ? 'true' : 'false'); }
 
   function setRainbow(on) {
-    root.classList.toggle('rainbow', on);
+    if (on) { root.classList.remove('mono'); sset(MONO_KEY, '0'); }   // 무지개와 모노는 동시에 켤 수 없음
+    root.classList.toggle('rainbow', on || root.classList.contains('mono'));
+    syncGlassSwitch();
     sw.setAttribute('aria-checked', on ? 'true' : 'false');
     sset(RB_KEY, on ? '1' : '0');
   }
@@ -3996,9 +4446,40 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
   item.hidden = !unlocked;
   setRainbow(unlocked && sget(RB_KEY) === '1');
 
+  // 모노 테마 복원 (무지개와 같은 유리 디자인에서 무지개 색만 뺀 테마)
+  function applyMono(on) {
+    root.classList.toggle('mono', on);
+    if (on) { root.classList.add('rainbow'); sw.setAttribute('aria-checked', 'false'); }
+    syncGlassSwitch();
+  }
+  function setMono(on) {
+    if (on) {
+      var wasRb = root.classList.contains('rainbow') && !root.classList.contains('mono');
+      sset(MONO_FROM_RB, wasRb ? '1' : '0');
+      applyMono(true);
+      sset(MONO_KEY, '1');
+      sset(RB_KEY, '0');
+    } else {
+      var back = sget(MONO_FROM_RB) === '1';
+      root.classList.remove('mono');
+      sset(MONO_KEY, '0');
+      setRainbow(back);          // 모노 이전에 무지개였다면 무지개로, 아니면 기본 테마로
+    }
+  }
+  if (sget(MONO_KEY) === '1') applyMono(true);
+  // 유리 테마 메뉴 복원 (이전에 켜 둔 상태였다면 해금된 것으로 간주)
+  glassItem.hidden = !(sget(GLASS_UNLOCK_KEY) === '1' || sget(MONO_KEY) === '1');
+  syncEggSec();
+  syncGlassSwitch();
+  glassSw.addEventListener('click', function () {
+    var on = glassSw.getAttribute('aria-checked') !== 'true';
+    setMono(on);
+    toast(on ? '유리 테마 ON!' : '유리 테마 OFF');
+  });
+
   // 메뉴 안 스위치로 켜고 끄기
   sw.addEventListener('click', function () {
-    var on = !root.classList.contains('rainbow');
+    var on = sw.getAttribute('aria-checked') !== 'true';
     setRainbow(on);
     toast(on ? '무지개 테마 ON!' : '무지개 테마 OFF');
   });
@@ -4015,17 +4496,17 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
   }
 
   /* 푸터 위치에서 원형으로 테마가 퍼지는(또는 접히는) 전환 */
-  function origin() {
-    var r = footer.getBoundingClientRect();
+  function origin(el) {
+    var r = (el || footer).getBoundingClientRect();
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   }
   function maxRadius(o) {
     return Math.hypot(Math.max(o.x, window.innerWidth - o.x), Math.max(o.y, window.innerHeight - o.y));
   }
 
-  function reveal(on, apply) {
+  function reveal(on, apply, el) {
     if (reduced() || !document.startViewTransition) { apply(); return; }
-    var o = origin(), R = maxRadius(o);
+    var o = origin(el), R = maxRadius(o);
     root.classList.toggle('vt-back', !on);
     var vt = document.startViewTransition(apply);
     vt.ready.then(function () {
@@ -4042,8 +4523,8 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
   }
 
   /* 충격파 링 + 빛 번쩍임 + 반짝이 입자 */
-  function effects(on) {
-    var o = origin(), R = maxRadius(o);
+  function effects(on, palette, el) {
+    var o = origin(el), R = maxRadius(o);
     var glow = document.createElement('div');
     glow.className = 'egg-glow';
     glow.style.background = 'radial-gradient(circle 170px at ' + o.x + 'px ' + o.y + 'px, rgba(255,255,255,.55), rgba(255,255,255,0) 100%)';
@@ -4053,7 +4534,7 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
     for (var i = 0; i < 3; i++) {
       (function (i) {
         var ring = document.createElement('div');
-        ring.className = 'egg-ring' + (on ? '' : ' back');
+        ring.className = 'egg-ring' + (on ? '' : ' back') + (palette ? ' mono' : '');
         ring.style.left = o.x + 'px';
         ring.style.top = o.y + 'px';
         ring.style.setProperty('--rs', (R * 2 / 40) * (1 - i * 0.12));
@@ -4063,7 +4544,7 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
       })(i);
     }
 
-    var colors = ['#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#00c7be', '#5ac8fa', '#af52de', '#ff6eb4'];
+    var colors = palette || ['#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#00c7be', '#5ac8fa', '#af52de', '#ff6eb4'];
     for (var k = 0; k < 40; k++) {
       var sp = document.createElement('div');
       sp.className = 'egg-spark';
@@ -4117,7 +4598,7 @@ function logEasterEgg(eventName) {
     taps++;
     clearTimeout(timer);
     timer = setTimeout(function () { taps = 0; }, 2000);   // 2초 안에 이어서 눌러야 함
-    if (taps < 5) { if (!reduced()) restart('tap'); buzz(15); return; }
+    if (taps < 5) return;   // 1~4번째 탭: 눌림 효과·진동 없음
     taps = 0;
     clearTimeout(timer);
 
@@ -4129,7 +4610,7 @@ function logEasterEgg(eventName) {
         sset(UNLOCK_KEY, '1');
         setRainbow(true);
       });
-      if (!reduced()) { restart('tap'); effects(true); }
+      if (!reduced()) effects(true);
       buzz([40, 60, 40]);
       toast('무지개 테마가 켜졌어요! 메뉴에서 끌 수 있어요');
     } else {
@@ -4140,11 +4621,42 @@ function logEasterEgg(eventName) {
         item.hidden = true;
         sset(UNLOCK_KEY, '0');
       });
-      if (!reduced()) { restart('tap'); effects(false); }
+      if (!reduced()) effects(false);
       buzz([60, 40, 60]);
       toast('무지개 메뉴를 다시 숨겼어요');
     }
   });
+
+  // 제목(세인영 OTT 공유 현황) 5연타 → 유리 테마 메뉴 해금 / 다시 5연타 → 잠금
+  // 탭마다 눌림 효과·진동·애니메이션 없음. 5번째에서만 전환 모션이 나옴.
+  var title = document.querySelector('h1');
+  if (title) {
+    var tTaps = 0, tLast = 0;
+    title.addEventListener('click', function () {
+      var n = Date.now();
+      tTaps = (n - tLast <= 800) ? tTaps + 1 : 1;   // 앞 탭과 0.8초 안에 이어서 눌러야 함
+      tLast = n;
+      if (tTaps < 5) return;
+      tTaps = 0;
+
+      var unlock = glassItem.hidden;
+      logEasterEgg(unlock ? 'glass_unlock' : 'glass_lock');
+      reveal(unlock, function () {
+        if (unlock) {
+          glassItem.hidden = false;
+          sset(GLASS_UNLOCK_KEY, '1');
+          setMono(true);              // 해금과 동시에 유리 테마 적용
+        } else {
+          setMono(false);
+          glassItem.hidden = true;
+          sset(GLASS_UNLOCK_KEY, '0');
+        }
+      }, title);
+      if (!reduced()) effects(unlock, ['#ffffff', '#e6eaf7', '#c3cadf', '#98a1bb'], title);
+      buzz(unlock ? [30, 40, 30] : [40, 30, 40]);
+      toast(unlock ? '유리 테마가 켜졌어요! 메뉴에서 끌 수 있어요' : '유리 테마 메뉴를 다시 숨겼어요');
+    });
+  }
 
   function toast(msg) {
     var t = document.createElement('div');
@@ -4204,6 +4716,114 @@ function logEasterEgg(eventName) {
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden) { purge(); recordVisit(); }
   });
+</script>
+<script>
+/* 무지개 테마 전용: 필터 선택 표시가 물방울처럼 옆으로 흘러 이동 */
+(function () {
+  var bar = document.getElementById('filterBar');
+  if (!bar) return;
+  var drop = document.createElement('span');
+  drop.className = 'rb-drop';
+  drop.setAttribute('aria-hidden', 'true');
+  bar.insertBefore(drop, bar.firstChild);
+  var root = document.documentElement;
+  var cur = null, anim = null;
+
+  function active() { return bar.querySelector('.filter-btn[aria-checked="true"]'); }
+  function rect(b) { return { x: b.offsetLeft, y: b.offsetTop, w: b.offsetWidth, h: b.offsetHeight }; }
+  function put(r) {
+    drop.style.width = r.w + 'px';
+    drop.style.height = r.h + 'px';
+    drop.style.top = r.y + 'px';
+    drop.style.transform = 'translateX(' + r.x + 'px)';
+  }
+  function isRainbow() { return root.classList.contains('rainbow'); }
+
+  function place(animate) {
+    if (!isRainbow()) { bar.classList.remove('rb-drop-on'); cur = null; return; }
+    var b = active();
+    if (!b || !b.offsetWidth) return;
+    bar.classList.add('rb-drop-on');
+    var r = rect(b);
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!animate || !cur || reduce || !drop.animate) { if (anim) anim.cancel(); put(r); cur = r; return; }
+    if (anim) anim.cancel();
+    var from = cur;
+    var left = Math.min(from.x, r.x), right = Math.max(from.x + from.w, r.x + r.w);
+    var dist = Math.abs(r.x - from.x);
+    var squash = dist > 0 ? 'scaleY(.82)' : 'scaleY(1)';
+    var top = r.y + 'px', h = r.h + 'px';
+    drop.style.top = top; drop.style.height = h;
+    anim = drop.animate([
+      { width: from.w + 'px', transform: 'translateX(' + from.x + 'px) scaleY(1)' },
+      { width: (right - left) + 'px', transform: 'translateX(' + left + 'px) ' + squash, offset: .45 },
+      { width: r.w + 'px', transform: 'translateX(' + r.x + 'px) scaleY(1)' }
+    ], { duration: 480, easing: 'cubic-bezier(.4, 0, .2, 1)' });
+    cur = r;
+    var a = anim;
+    a.onfinish = function () { if (anim === a) { anim = null; put(rect(active() || b)); cur = rect(active() || b); } };
+    a.oncancel = function () {};
+    put0(r);
+  }
+  function put0(r) {   /* 애니메이션이 끝난 뒤 유지될 최종 값 */
+    drop.style.width = r.w + 'px';
+    drop.style.transform = 'translateX(' + r.x + 'px)';
+  }
+
+  /* 선택 변경 감지 (기존 클릭 코드는 그대로 두고 aria-checked 변화만 관찰) */
+  var mo = new MutationObserver(function () { place(true); });
+  bar.querySelectorAll('.filter-btn').forEach(function (b) {
+    mo.observe(b, { attributes: true, attributeFilter: ['aria-checked'] });
+  });
+  /* 라벨의 (숫자)가 바뀌어 너비가 변하면 제자리 보정 */
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(function () { if (!anim) place(false); });
+    ro.observe(bar);
+    bar.querySelectorAll('.filter-btn').forEach(function (b) { ro.observe(b); });
+  }
+  window.addEventListener('resize', function () { if (!anim) place(false); });
+  /* 테마 전환(무지개 켜짐/꺼짐) 감지 */
+  new MutationObserver(function () { place(false); }).observe(root, { attributes: true, attributeFilter: ['class'] });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { place(false); });
+  place(false);
+})();
+</script>
+<script>
+/* 큰 제목이 접히는 헤더: 스크롤 정도(--hp 0~1)에 따라 큰 제목은 사라지고 상단 작은 바가 나타남 */
+(function () {
+  var bar = document.getElementById('cbar');
+  var head = document.querySelector('.header-area');
+  var menu = document.getElementById('menuBtn');
+  var tog = document.getElementById('themeToggleBtn');
+  var lab = document.getElementById('themeLabel');
+  if (!bar || !head || !menu || !tog || !lab) return;
+
+  var cMenu = bar.querySelector('.menu-btn');
+  var cTog = bar.querySelector('.theme-toggle-btn');
+  var cLab = bar.querySelector('.cbar-label');
+  cMenu.innerHTML = menu.innerHTML;                       // 메뉴 아이콘 복사
+  cMenu.addEventListener('click', function () { menu.click(); });
+  cTog.addEventListener('click', function () { tog.click(); });
+
+  function syncLabel() { cLab.textContent = lab.textContent; }   // 주간/야간 문구 동기화
+  syncLabel();
+  new MutationObserver(syncLabel).observe(lab, { childList: true, characterData: true, subtree: true });
+
+  var ticking = false;
+  function update() {
+    ticking = false;
+    var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+    var p = Math.min(1, Math.max(0, (y - 36) / 48)).toFixed(3);
+    bar.style.setProperty('--hp', p);
+    head.style.setProperty('--hp', p);
+    bar.classList.toggle('on', p > 0.02);
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+})();
 </script>
 </body>
 </html>
