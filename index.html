@@ -2207,15 +2207,6 @@ footer.tap { animation: none; }
 /* 탭 + 필터바: 고정 없이 일반 위치 */
 .sticky-nav .filter-bar { margin-bottom: 10px; }
 
-/* ===== 무지개/유리 테마: 기울이면 유리 위 반사광이 따라 움직임 ===== */
-:root.rainbow.tilt-on :is(.card, .summary, .notice, .mine-card, .filter-bar) {
-  background-image:
-    radial-gradient(circle at var(--tx, 50%) var(--ty, 30%), rgba(255, 255, 255, var(--tilt-a, .30)), transparent 58%),
-    linear-gradient(135deg, var(--glass-hl), rgba(255, 255, 255, .03) 60%);
-}
-@media (prefers-color-scheme: dark) { :root.rainbow:not([data-theme="light"]) { --tilt-a: .16; } }
-:root.rainbow[data-theme="dark"] { --tilt-a: .16; }
-
 /* ===== 유리 테마 주간 모드: 블록별 유리 느낌 강화 (뒤에 비칠 빛 + 이중 테두리 + 윗면 광택) ===== */
 :root.rainbow.mono {
   --lg-blob: 1;
@@ -2776,6 +2767,46 @@ footer.tap { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   :root.rainbow::before, :root.rainbow::after { animation: none !important; }
 }
+/* 유리 테마 배경: 별똥별이 지나갈 때만 은은한 유리빛 번짐 */
+:root.rainbow.mono .glass-meteor {
+  position: fixed;
+  z-index: -1;
+  width: clamp(110px, 28vw, 220px);
+  height: 2px;
+  pointer-events: none;
+  opacity: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(185, 205, 255, .10) 32%, rgba(235, 242, 255, .68) 82%, rgba(255,255,255,.95));
+  filter: blur(.45px) drop-shadow(0 0 3px rgba(175, 205, 255, .48));
+  transform-origin: 100% 50%;
+  animation: glassMeteorPass 1.7s cubic-bezier(.18,.55,.35,1) forwards;
+  will-change: transform, opacity, filter;
+}
+:root.rainbow.mono .glass-meteor::before {
+  content: "";
+  position: absolute;
+  right: 8%; top: -2px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.95);
+  box-shadow: 0 0 5px 2px rgba(210,225,255,.48);
+}
+:root.rainbow.mono .glass-meteor::after {
+  content: "";
+  position: absolute;
+  right: 2%; top: -9px;
+  width: 34px; height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(210,225,255,.24), rgba(190,210,255,.07) 48%, transparent 76%);
+  filter: blur(5px);
+}
+@keyframes glassMeteorPass {
+  0% { opacity: 0; transform: translate3d(0,0,0) rotate(var(--meteor-angle)); filter: blur(1px) drop-shadow(0 0 1px rgba(175,205,255,.2)); }
+  14% { opacity: .78; }
+  68% { opacity: .7; }
+  100% { opacity: 0; transform: translate3d(var(--meteor-x),var(--meteor-y),0) rotate(var(--meteor-angle)); filter: blur(.7px) drop-shadow(0 0 5px rgba(175,205,255,.5)); }
+}
+@media (prefers-reduced-motion: reduce) { .glass-meteor { display: none !important; } }
 </style>
 </head>
 <body>
@@ -5625,41 +5656,31 @@ function logEasterEgg(eventName) {
   }).observe(ov, { attributes: true, attributeFilter: ['class'] });
 })();
 
-/* 무지개/유리 테마 전용: 폰을 기울이면 반사광 이동 */
+/* 유리 테마: 1~7초 간격으로 랜덤 위치에서 별똥별을 지나가게 한다. */
 (function () {
-  var root = document.documentElement, asked = false, on = false, raf = 0, tx = 50, ty = 30, cx = 50, cy = 30;
-  if (!window.DeviceOrientationEvent) return;
-  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-  function frame() {
-    raf = 0;
-    cx += (tx - cx) * .12; cy += (ty - cy) * .12;
-    root.style.setProperty('--tx', cx.toFixed(1) + '%');
-    root.style.setProperty('--ty', cy.toFixed(1) + '%');
-    if (Math.abs(tx - cx) > .1 || Math.abs(ty - cy) > .1) raf = requestAnimationFrame(frame);
+  var root = document.documentElement;
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) return;
+  function launch() {
+    if (!root.classList.contains('rainbow') || !root.classList.contains('mono') || !document.body) return;
+    var meteor = document.createElement('i');
+    meteor.className = 'glass-meteor';
+    meteor.setAttribute('aria-hidden', 'true');
+    meteor.style.left = (Math.random() * 82) + 'vw';
+    meteor.style.top = (8 + Math.random() * 78) + 'vh';
+    meteor.style.setProperty('--meteor-angle', (-18 - Math.random() * 24) + 'deg');
+    meteor.style.setProperty('--meteor-x', (18 + Math.random() * 25) + 'vw');
+    meteor.style.setProperty('--meteor-y', (7 + Math.random() * 17) + 'vh');
+    document.body.appendChild(meteor);
+    setTimeout(function () { meteor.remove(); }, 1900);
   }
-  function onTilt(e) {
-    if (e.gamma == null || e.beta == null) return;
-    if (!root.classList.contains('rainbow')) { root.classList.remove('tilt-on'); return; }
-    root.classList.add('tilt-on');
-    tx = 50 + clamp(e.gamma, -30, 30) / 30 * 45;
-    ty = 50 + clamp(e.beta - 45, -30, 30) / 30 * 45;
-    if (!raf) raf = requestAnimationFrame(frame);
+  function scheduleNext() {
+    window.setTimeout(function () {
+      launch();
+      scheduleNext();
+    }, 1000 + Math.random() * 6000);
   }
-  function start() {
-    if (on) return; on = true;
-    window.addEventListener('deviceorientation', onTilt, { passive: true });
-  }
-  document.addEventListener('pointerdown', function () {
-    if (asked || !root.classList.contains('rainbow')) return;
-    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    asked = true;
-    var D = window.DeviceOrientationEvent;
-    if (typeof D.requestPermission === 'function') {
-      D.requestPermission().then(function (r) { if (r === 'granted') start(); }).catch(function () {});
-    } else start();
-  }, { passive: true });
-})();
-
-</script>
+  scheduleNext();
+})();</script>
 </body>
 </html>
