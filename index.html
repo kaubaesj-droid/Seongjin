@@ -2768,7 +2768,7 @@ footer.tap { animation: none; }
   :root.rainbow::before, :root.rainbow::after { animation: none !important; }
 }
 /* 유리 테마 배경: 별똥별이 지나갈 때만 은은한 유리빛 번짐 */
-:root.rainbow.mono .glass-meteor {
+:root.rainbow .glass-meteor {
   position: fixed;
   z-index: -1;
   width: clamp(110px, 28vw, 220px);
@@ -2782,7 +2782,7 @@ footer.tap { animation: none; }
   animation: glassMeteorPass 1.7s cubic-bezier(.18,.55,.35,1) forwards;
   will-change: transform, opacity, filter;
 }
-:root.rainbow.mono .glass-meteor::before {
+:root.rainbow .glass-meteor::before {
   content: "";
   position: absolute;
   right: 8%; top: -2px;
@@ -2791,7 +2791,7 @@ footer.tap { animation: none; }
   background: rgba(255,255,255,.95);
   box-shadow: 0 0 5px 2px rgba(210,225,255,.48);
 }
-:root.rainbow.mono .glass-meteor::after {
+:root.rainbow .glass-meteor::after {
   content: "";
   position: absolute;
   right: 2%; top: -9px;
@@ -5662,7 +5662,9 @@ function logEasterEgg(eventName) {
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduced) return;
   function launch() {
-    if (!root.classList.contains('rainbow') || !root.classList.contains('mono') || !document.body) return;
+    var glassMode = root.classList.contains('mono');
+    var rainbowNight = root.getAttribute('data-theme') === 'dark';
+    if (!root.classList.contains('rainbow') || (!glassMode && !rainbowNight) || !document.body) return;
     var meteor = document.createElement('i');
     meteor.className = 'glass-meteor';
     meteor.setAttribute('aria-hidden', 'true');
