@@ -2801,10 +2801,10 @@ footer.tap { animation: none; }
   filter: blur(5px);
 }
 @keyframes glassMeteorPass {
-  0% { opacity: 0; transform: translate3d(0,0,0) rotate(var(--meteor-angle)); filter: blur(1px) drop-shadow(0 0 1px rgba(175,205,255,.2)); }
-  14% { opacity: .78; }
-  68% { opacity: .7; }
-  100% { opacity: 0; transform: translate3d(var(--meteor-x),var(--meteor-y),0) rotate(var(--meteor-angle)); filter: blur(.7px) drop-shadow(0 0 5px rgba(175,205,255,.5)); }
+  0% { opacity: 0; transform: translate3d(0,0,0) rotate(var(--meteor-angle)) scaleX(.12); filter: blur(1px) drop-shadow(0 0 1px rgba(175,205,255,.2)); }
+  14% { opacity: .78; transform: translate3d(0,0,0) rotate(var(--meteor-angle)) scaleX(1); }
+  68% { opacity: .7; transform: translate3d(var(--meteor-x),var(--meteor-y),0) rotate(var(--meteor-angle)) scaleX(1); }
+  100% { opacity: 0; transform: translate3d(var(--meteor-x),var(--meteor-y),0) rotate(var(--meteor-angle)) scaleX(.12); filter: blur(.7px) drop-shadow(0 0 5px rgba(175,205,255,.5)); }
 }
 @media (prefers-reduced-motion: reduce) { .glass-meteor { display: none !important; } }
 </style>
@@ -5668,11 +5668,18 @@ function logEasterEgg(eventName) {
     var meteor = document.createElement('i');
     meteor.className = 'glass-meteor';
     meteor.setAttribute('aria-hidden', 'true');
-    meteor.style.left = (Math.random() * 82) + 'vw';
-    meteor.style.top = (8 + Math.random() * 78) + 'vh';
-    meteor.style.setProperty('--meteor-angle', (-18 - Math.random() * 24) + 'deg');
-    meteor.style.setProperty('--meteor-x', (18 + Math.random() * 25) + 'vw');
-    meteor.style.setProperty('--meteor-y', (7 + Math.random() * 17) + 'vh');
+    var xDir = Math.random() < .5 ? -1 : 1;
+    var yDir = Math.random() < .5 ? -1 : 1;
+    var dx = xDir * (18 + Math.random() * 25);
+    var dy = yDir * (7 + Math.random() * 17);
+    var left = xDir > 0 ? Math.random() * 75 : 25 + Math.random() * 75;
+    var top = yDir > 0 ? 5 + Math.random() * 72 : 23 + Math.random() * 72;
+    var angle = Math.atan2(dy * window.innerHeight / 100, dx * window.innerWidth / 100) * 180 / Math.PI;
+    meteor.style.left = left + 'vw';
+    meteor.style.top = top + 'vh';
+    meteor.style.setProperty('--meteor-angle', angle + 'deg');
+    meteor.style.setProperty('--meteor-x', dx + 'vw');
+    meteor.style.setProperty('--meteor-y', dy + 'vh');
     document.body.appendChild(meteor);
     setTimeout(function () { meteor.remove(); }, 1900);
   }
