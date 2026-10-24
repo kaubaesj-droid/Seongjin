@@ -5385,7 +5385,7 @@ function logEasterEgg(eventName) {
       { width: r.w + 'px', transform: 'translateX(' + r.x + 'px) scale(1.06, .94)', offset: .74, easing: 'ease-out' },
       { width: r.w + 'px', transform: 'translateX(' + r.x + 'px) scale(.98, 1.03)', offset: .88, easing: 'ease-out' },
       { width: r.w + 'px', transform: 'translateX(' + r.x + 'px) scale(1, 1)' }
-    ], { duration: 620 });
+    ], { duration: 1000, easing: 'cubic-bezier(.22, .7, .25, 1)' });
     cur = r;
     var a = anim;
     a.onfinish = function () { if (anim === a) { anim = null; put(rect(active() || b)); cur = rect(active() || b); } };
