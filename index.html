@@ -5071,7 +5071,6 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
   var RB_KEY = 'ott-board-rainbow';              // 켜짐 상태
   var UNLOCK_KEY = 'ott-board-rainbow-unlocked'; // 메뉴 해금 여부
   var MONO_KEY = 'ott-board-mono';               // 모노 테마 켜짐 상태 (제목 5연타)
-  var MONO_FROM_RB = 'ott-board-mono-from-rb';   // 모노로 들어가기 전에 무지개가 켜져 있었는지
   var GLASS_UNLOCK_KEY = 'ott-board-glass-unlocked'; // 유리 테마 메뉴 해금 여부 (제목 5연타)
   var root = document.documentElement;
   var footer = document.querySelector('footer');
@@ -5089,39 +5088,43 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
   function syncGlassSwitch() { glassSw.setAttribute('aria-checked', root.classList.contains('mono') ? 'true' : 'false'); }
 
   function setRainbow(on) {
-    if (on) { root.classList.remove('mono'); sset(MONO_KEY, '0'); }   // 무지개와 모노는 동시에 켤 수 없음
-    root.classList.toggle('rainbow', on || root.classList.contains('mono'));
-    syncGlassSwitch();
-    sw.setAttribute('aria-checked', on ? 'true' : 'false');
+    root.classList.remove('mono');
+    root.classList.toggle('rainbow', !!on);
+    sset(MONO_KEY, '0');
     sset(RB_KEY, on ? '1' : '0');
+    sw.setAttribute('aria-checked', on ? 'true' : 'false');
+    syncGlassSwitch();
   }
-
   // 저장된 상태 복원
   var unlocked = sget(UNLOCK_KEY) === '1';
+  var savedMono = sget(MONO_KEY) === '1';
   item.hidden = !unlocked;
-  setRainbow(unlocked && sget(RB_KEY) === '1');
+  setRainbow(!savedMono && unlocked && sget(RB_KEY) === '1');
 
-  // 모노 테마 복원 (무지개와 같은 유리 디자인에서 무지개 색만 뺀 테마)
+  // 유리 테마는 무지개 테마와 전환되는 독립 모드
   function applyMono(on) {
-    root.classList.toggle('mono', on);
-    if (on) { root.classList.add('rainbow'); sw.setAttribute('aria-checked', 'false'); }
+    root.classList.toggle('mono', !!on);
+    root.classList.toggle('rainbow', !!on);
+    sw.setAttribute('aria-checked', 'false');
     syncGlassSwitch();
   }
   function setMono(on) {
     if (on) {
-      var wasRb = root.classList.contains('rainbow') && !root.classList.contains('mono');
-      sset(MONO_FROM_RB, wasRb ? '1' : '0');
-      applyMono(true);
+      root.classList.add('rainbow', 'mono');
       sset(MONO_KEY, '1');
       sset(RB_KEY, '0');
     } else {
-      var back = sget(MONO_FROM_RB) === '1';
-      root.classList.remove('mono');
+      root.classList.remove('mono', 'rainbow');
       sset(MONO_KEY, '0');
-      setRainbow(back);          // 모노 이전에 무지개였다면 무지개로, 아니면 기본 테마로
+      sset(RB_KEY, '0');
     }
+    sw.setAttribute('aria-checked', 'false');
+    syncGlassSwitch();
   }
-  if (sget(MONO_KEY) === '1') applyMono(true);
+  if (savedMono) {
+    sset(MONO_KEY, '1');
+    applyMono(true);
+  }
   // 유리 테마 메뉴 복원 (이전에 켜 둔 상태였다면 해금된 것으로 간주)
   glassItem.hidden = !(sget(GLASS_UNLOCK_KEY) === '1' || sget(MONO_KEY) === '1');
   syncEggSec();
