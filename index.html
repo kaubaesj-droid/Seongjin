@@ -5400,7 +5400,7 @@ function logEasterEgg(eventName) {
     if (wf.length) return;
     var svg = document.createElementNS(NS, 'svg');
     svg.setAttribute('aria-hidden', 'true');
-    svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
+    svg.style.cssText = 'position:fixed;width:1px;height:1px;left:-10px;top:-10px;opacity:0;overflow:hidden;pointer-events:none';
     var n = bar.querySelectorAll('.filter-btn').length;
     for (var i = 0; i < n; i++) {
       var f = document.createElementNS(NS, 'filter');
@@ -5427,11 +5427,9 @@ function logEasterEgg(eventName) {
     if (wRaf) { cancelAnimationFrame(wRaf); wRaf = 0; }
     wAnims.forEach(function (x) { try { x.cancel(); } catch (e) {} });
     wAnims = [];
-    btns.forEach(function (b) { b.style.filter = ''; });
+    btns.forEach(function (b) { b.style.filter = ''; b.style.webkitFilter = ''; });
   }
   function waterText(from, to, activeBtn) {
-    var isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-    if (isTouch) { clearWater(Array.prototype.slice.call(bar.querySelectorAll('.filter-btn'))); return; }
     var btns = Array.prototype.slice.call(bar.querySelectorAll('.filter-btn'));
     clearWater(btns);
     var fi = -1;
@@ -5492,7 +5490,9 @@ function logEasterEgg(eventName) {
         var w = wf[p.i];
         w.d.setAttribute('scale', (p.peak * amp).toFixed(2));
         w.t.setAttribute('baseFrequency', (0.018 + 0.02 * u).toFixed(4) + ' ' + (0.045 + 0.03 * u).toFixed(4));
-        b.style.filter = 'url(#rbWater' + p.i + ') blur(' + (amp * 1.1).toFixed(2) + 'px)';
+        var cssFilter = 'url(#rbWater' + p.i + ') blur(' + (amp * 1.1).toFixed(2) + 'px)';
+        b.style.webkitFilter = cssFilter;
+        b.style.filter = cssFilter;
       });
       wRaf = live ? requestAnimationFrame(tick) : 0;
       if (!live) clearWater(btns);
