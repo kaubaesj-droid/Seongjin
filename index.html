@@ -2935,7 +2935,7 @@ footer.tap { animation: none; }
 
   /* ===== ✏️ 설정 모음 (수정은 여기서만 하세요) ===== */
   const CONFIG = {
-    VERSION: 'ver 1.2.0',   // 하단에 표시되는 버전
+    VERSION: 'ver 1.2.1',   // 하단에 표시되는 버전
     ADMIN_KEY: 'saintyoung26',      // 불편사항 조회 비밀키
     LOG_PIN: '1357',        // 사용 로그 핀코드
     STATS_PIN: '2468'       // 이용 현황 비밀번호
@@ -4182,7 +4182,7 @@ function renderLogList() {
   list.textContent = '';
   if (!rows.length) list.appendChild(el('p', 'log-empty', '이 날의 기록이 없습니다.'));
   rows.forEach(function (s) { list.appendChild(sessionCard(s)); });
-  list.appendChild(el('div', 'lg-note', 'DB와 연동되어 최근 2,000건의 기록이 표시됩니다.'));
+  list.appendChild(el('div', 'lg-note', 'DB와 연동되어 최근  2 주 기록이 표시됩니다.'));
 }
 
   /* ===== 이용 현황 (비밀번호) ===== */
