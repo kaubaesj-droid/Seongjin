@@ -1931,14 +1931,20 @@ h1 {
     radial-gradient(46vmax 46vmax at 92% 24%, var(--mn-g2), transparent 62%),
     radial-gradient(50vmax 50vmax at 28% 96%, var(--mn-g3), transparent 62%),
     radial-gradient(42vmax 42vmax at 86% 92%, var(--mn-g4), transparent 62%);
+  /* 유리 아래 빛이 천천히 굴절되는 듯, 배경 하이라이트만 부드럽게 이동 */
+  animation: glassRefractionDrift 24s ease-in-out infinite alternate;
+}
+@keyframes glassRefractionDrift {
+  from { transform: translate3d(1.5%, -1%, 0) scale(1); opacity: .78; }
+  to   { transform: translate3d(-1.5%, 1.2%, 0) scale(1.04); opacity: 1; }
 }
 
 /* 제목 */
 :root.rainbow.mono h1 {
-  background: none;
+  background: none !important;
   -webkit-background-clip: border-box;
   background-clip: border-box;
-  color: var(--ink);
+  color: var(--mn-ink) !important;
   animation: none;
   filter: none;
 }
@@ -2145,10 +2151,10 @@ footer.tap { animation: none; }
   filter: drop-shadow(0 1px 2px rgba(90, 50, 150, .35));
 }
 :root.rainbow.mono .cbar-title {
-  background: none;
+  background: none !important;
   -webkit-background-clip: border-box;
   background-clip: border-box;
-  color: var(--ink);
+  color: var(--mn-ink) !important;
   animation: none;
   filter: none;
 }
