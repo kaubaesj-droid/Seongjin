@@ -5431,6 +5431,8 @@ function logEasterEgg(eventName) {
     btns.forEach(function (b) { b.style.filter = ''; });
   }
   function waterText(from, to, activeBtn) {
+    var isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    if (isTouch) { clearWater(Array.prototype.slice.call(bar.querySelectorAll('.filter-btn'))); return; }
     var btns = Array.prototype.slice.call(bar.querySelectorAll('.filter-btn'));
     clearWater(btns);
     var fi = -1;
