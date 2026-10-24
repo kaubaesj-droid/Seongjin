@@ -5351,7 +5351,7 @@ function logEasterEgg(eventName) {
   drop.setAttribute('aria-hidden', 'true');
   bar.insertBefore(drop, bar.firstChild);
   var root = document.documentElement;
-  var cur = null, anim = null;
+  var cur = null, anim = null, pendingSelection = false, selectionFrame = 0;
 
   function active() { return bar.querySelector('.filter-btn[aria-checked="true"]'); }
   function rect(b) { return { x: b.offsetLeft, y: b.offsetTop, w: b.offsetWidth, h: b.offsetHeight }; }
@@ -5369,8 +5369,7 @@ function logEasterEgg(eventName) {
     if (!b || !b.offsetWidth) return;
     bar.classList.add('rb-drop-on');
     var r = rect(b);
-    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!animate || !cur || reduce || !drop.animate) { if (anim) anim.cancel(); put(r); cur = r; return; }
+    if (!animate || !cur || !drop.animate) { if (anim) anim.cancel(); put(r); cur = r; return; }
     if (anim) anim.cancel();
     var from = cur;
     var left = Math.min(from.x, r.x), right = Math.max(from.x + from.w, r.x + r.w);
@@ -5385,7 +5384,7 @@ function logEasterEgg(eventName) {
       { width: r.w + 'px', transform: 'translateX(' + r.x + 'px) scale(1.06, .94)', offset: .74, easing: 'ease-out' },
       { width: r.w + 'px', transform: 'translateX(' + r.x + 'px) scale(.98, 1.03)', offset: .88, easing: 'ease-out' },
       { width: r.w + 'px', transform: 'translateX(' + r.x + 'px) scale(1, 1)' }
-    ], { duration: 1000, easing: 'cubic-bezier(.22, .7, .25, 1)' });
+    ], { duration: 1600, easing: 'cubic-bezier(.22, .7, .25, 1)' });
     cur = r;
     var a = anim;
     a.onfinish = function () { if (anim === a) { anim = null; put(rect(active() || b)); cur = rect(active() || b); } };
@@ -5506,14 +5505,21 @@ function logEasterEgg(eventName) {
     drop.style.transform = 'translateX(' + r.x + 'px)';
   }
 
-  /* 선택 변경 감지 (기존 클릭 코드는 그대로 두고 aria-checked 변화만 관찰) */
-  var mo = new MutationObserver(function () { place(true); });
-  bar.querySelectorAll('.filter-btn').forEach(function (b) {
-    mo.observe(b, { attributes: true, attributeFilter: ['aria-checked'] });
+  /* 클릭 뒤 한 번만 이동을 시작해 어느 방향에서도 물방울 위치에서 이어간다. */
+  bar.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.filter-btn');
+    if (!b) return;
+    pendingSelection = true;
+    if (selectionFrame) cancelAnimationFrame(selectionFrame);
+    selectionFrame = requestAnimationFrame(function () {
+      selectionFrame = 0;
+      place(true);
+      pendingSelection = false;
+    });
   });
   /* 라벨의 (숫자)가 바뀌어 너비가 변하면 제자리 보정 */
   if (window.ResizeObserver) {
-    var ro = new ResizeObserver(function () { if (!anim) place(false); });
+    var ro = new ResizeObserver(function () { if (!anim && !pendingSelection) place(false); });
     ro.observe(bar);
     bar.querySelectorAll('.filter-btn').forEach(function (b) { ro.observe(b); });
   }
