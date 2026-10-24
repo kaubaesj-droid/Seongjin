@@ -5363,15 +5363,15 @@ function logEasterEgg(eventName) {
   }
   function isRainbow() { return root.classList.contains('rainbow'); }
 
-  function place(animate) {
+  function place(animate, fromOverride) {
     if (!isRainbow()) { bar.classList.remove('rb-drop-on'); cur = null; lastActive = null; return; }
     var b = active();
     if (!b || !b.offsetWidth) return;
     bar.classList.add('rb-drop-on');
     var r = rect(b);
-    if (!animate || !cur || !drop.animate) { if (anim) anim.cancel(); put(r); cur = r; lastActive = b; return; }
+    if (!animate || (!cur && !fromOverride) || !drop.animate) { if (anim) anim.cancel(); put(r); cur = r; lastActive = b; return; }
     if (anim) anim.cancel();
-    var from = cur;
+    var from = fromOverride || cur;
     var left = Math.min(from.x, r.x), right = Math.max(from.x + from.w, r.x + r.w);
     var dist = Math.abs(r.x - from.x);
     var squash = dist > 0 ? 'scaleY(.82)' : 'scaleY(1)';
@@ -5506,21 +5506,23 @@ function logEasterEgg(eventName) {
   }
 
   /* 클릭 뒤 한 번만 이동을 시작해 어느 방향에서도 물방울 위치에서 이어간다. */
+  bar.addEventListener('pointerdown', function (e) {
+    if (e.target.closest && e.target.closest('.filter-btn')) lastActive = active();
+  }, true);
   bar.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('.filter-btn');
     if (!b) return;
+    var startButton = lastActive;
     pendingSelection = true;
     if (selectionFrame) cancelAnimationFrame(selectionFrame);
     selectionFrame = requestAnimationFrame(function () {
       selectionFrame = 0;
-      /* 첫 렌더에서 좌표가 준비되지 않았으면 이전 선택 버튼에서 시작점을 복원한다. */
-      if (!cur && lastActive && lastActive.offsetWidth) cur = rect(lastActive);
-      place(true);
+      var from = startButton && startButton.offsetWidth ? rect(startButton) : cur;
+      place(true, from);
       lastActive = active();
       pendingSelection = false;
     });
-  });
-  /* 라벨의 (숫자)가 바뀌어 너비가 변하면 제자리 보정 */
+  });  /* 라벨의 (숫자)가 바뀌어 너비가 변하면 제자리 보정 */
   if (window.ResizeObserver) {
     var ro = new ResizeObserver(function () { if (!anim && !pendingSelection) place(false); });
     ro.observe(bar);
@@ -5530,6 +5532,7 @@ function logEasterEgg(eventName) {
   /* 테마 전환(무지개 켜짐/꺼짐) 감지 */
   new MutationObserver(function () { place(false); }).observe(root, { attributes: true, attributeFilter: ['class'] });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { place(false); });
+  lastActive = active();
   place(false);
 })();
 </script>
