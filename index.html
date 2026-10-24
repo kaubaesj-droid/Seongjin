@@ -1996,7 +1996,11 @@ h1 {
   background: linear-gradient(90deg, var(--free) 0 60%, var(--warn) 60% 85%, var(--busy) 85% 100%);
   box-shadow: none;
 }
-:root.rainbow.mono .zbar-cover { display: block; background: rgba(205, 213, 230, .82); }
+:root.rainbow.mono .zbar-cover { display: block; background: #ffffff; }
+@media (prefers-color-scheme: dark) {
+  :root.rainbow.mono:not([data-theme="light"]) .zbar-cover { background: #8b909b; }
+}
+:root.rainbow.mono[data-theme="dark"] .zbar-cover { background: #8b909b; }
 :root.rainbow.mono .zbar-fill { display: none; }
 
 /* 검색창 포커스 링 · 시트 그림자 · 토스트 밑줄 */
@@ -2006,6 +2010,17 @@ h1 {
 }
 :root.rainbow.mono .sheet {
   box-shadow: var(--mn-sheet-shadow), inset 0 1px 0 rgba(255, 255, 255, .8), inset 0 -1px 0 rgba(255, 255, 255, .18);
+}
+:root.rainbow.mono .sheet {
+  background-size: 220% 220%, 180% 180%;
+  animation: glassSheetShine 20s ease-in-out infinite alternate;
+}
+@keyframes glassSheetShine {
+  from { background-position: 0% 0%, 0% 0%; }
+  to   { background-position: 100% 100%, 35% 70%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root.rainbow.mono .sheet { animation: none; }
 }
 :root.rainbow.mono .egg-toast {
   background:
